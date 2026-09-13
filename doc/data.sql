@@ -1,4 +1,11 @@
-
+-- ATTENTION : Ce script est un exemple hérité du squelette initial du projet.
+-- Le schéma réel de l'application est généré automatiquement par Hibernate
+-- (spring.jpa.hibernate.ddl-auto=update) à partir des entités JPA, avec une
+-- convention de nommage snake_case (ex: curve_id, as_of_date) différente
+-- de celle utilisée ici (ex: CurveId).
+-- Ce script n'est PAS exécuté au démarrage de l'application et ne doit
+-- PAS être utilisé pour initialiser la base : il sert uniquement de
+-- référence sur la structure de données attendue par le projet.
 CREATE TABLE BidList (
   BidListId tinyint(4) NOT NULL AUTO_INCREMENT,
   account VARCHAR(30) NOT NULL,
