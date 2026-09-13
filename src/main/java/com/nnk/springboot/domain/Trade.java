@@ -10,6 +10,6 @@ import java.sql.Timestamp;
 public class Trade {
     // TODO: Map columns in data table TRADE with corresponding java fields
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer tradeId;
 }
