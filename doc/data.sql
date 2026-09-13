@@ -6,6 +6,16 @@
 -- Ce script n'est PAS exécuté au démarrage de l'application et ne doit
 -- PAS être utilisé pour initialiser la base : il sert uniquement de
 -- référence sur la structure de données attendue par le projet.
+
+-- ============================================================
+-- Comptes de test pour connexion a l'application
+-- Mot de passe en clair (identique pour les deux comptes) : icgaK7@K
+-- Hash genere avec BCryptPasswordEncoder(14), coherent avec
+-- le facteur de cout configure dans SecurityConfig.java
+-- ============================================================
+INSERT INTO users (fullname, username, password, role) VALUES ('Administrator', 'admin', '$2a$14$8Q0DsW9OFpHpDlBRHbkQbeSSIEbjYmcIXeYfZzQm60EEgO8OpF1nS', 'ADMIN');
+INSERT INTO users (fullname, username, password, role) VALUES ('User', 'user', '$2a$14$8Q0DsW9OFpHpDlBRHbkQbeSSIEbjYmcIXeYfZzQm60EEgO8OpF1nS', 'USER');
+
 CREATE TABLE BidList (
   BidListId tinyint(4) NOT NULL AUTO_INCREMENT,
   account VARCHAR(30) NOT NULL,
