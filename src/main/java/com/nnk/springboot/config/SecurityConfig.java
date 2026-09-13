@@ -34,6 +34,7 @@ public class SecurityConfig {
                         .defaultSuccessUrl("/bidList/list",true)
                 .permitAll())
                 .logout(logout -> logout
+                        .logoutUrl("/app-logout")
                         .logoutSuccessUrl("/app/login")
                         .permitAll());
         return http.build();
