@@ -2,6 +2,7 @@ package com.nnk.springboot.controllers;
 
 import com.nnk.springboot.domain.User;
 import com.nnk.springboot.repositories.UserRepository;
+import com.nnk.springboot.security.PasswordValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Controller;
@@ -33,14 +34,23 @@ public class UserController {
 
     @PostMapping("/user/validate")
     public String validate(@Valid User user, BindingResult result, Model model) {
-        if (!result.hasErrors()) {
-            BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(14);
-            user.setPassword(encoder.encode(user.getPassword()));
-            userRepository.save(user);
-            model.addAttribute("users", userRepository.findAll());
-            return "redirect:/user/list";
+        if (result.hasErrors()) {
+            return "user/add";
         }
-        return "user/add";
+        if (user.getPassword() == null || user.getPassword().isBlank()) {
+            result.rejectValue("password", "error.user", "Password is mandatory");
+            return "user/add";
+        }
+        if (!PasswordValidator.isValid(user.getPassword())) {
+            result.rejectValue("password", "error.user",
+                    "Password must contain at least 8 characters, one uppercase letter, one digit and one symbol");
+            return "user/add";
+        }
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(14);
+        user.setPassword(encoder.encode(user.getPassword()));
+        userRepository.save(user);
+        model.addAttribute("users", userRepository.findAll());
+        return "redirect:/user/list";
     }
 
     @GetMapping("/user/update/{id}")
@@ -57,9 +67,19 @@ public class UserController {
         if (result.hasErrors()) {
             return "user/update";
         }
-
-        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(14);
-        user.setPassword(encoder.encode(user.getPassword()));
+        if (user.getPassword() == null || user.getPassword().isBlank()) {
+            User existingUser = userRepository.findById(id)
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid user Id:" + id));
+            user.setPassword(existingUser.getPassword());
+        } else {
+            if (!PasswordValidator.isValid(user.getPassword())) {
+                result.rejectValue("password", "error.user",
+                        "Password must contain at least 8 characters, one uppercase letter, one digit and one symbol");
+                return "user/update";
+            }
+            BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(14);
+            user.setPassword(encoder.encode(user.getPassword()));
+        }
         user.setId(id);
         userRepository.save(user);
         model.addAttribute("users", userRepository.findAll());
