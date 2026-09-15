@@ -6,6 +6,7 @@ import com.nnk.springboot.repositories.CurvePointRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.sql.Timestamp;
 import java.util.List;
 
 @Service
@@ -24,6 +25,14 @@ public class CurvePointService {
     }
 
     public CurvePoint save(CurvePoint curvePoint) {
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        if (curvePoint.getId() == null) {
+            curvePoint.setCreationDate(now);
+        } else {
+            CurvePoint existing = findById(curvePoint.getId());
+            curvePoint.setCreationDate(existing.getCreationDate());
+        }
+        curvePoint.setAsOfDate(now);
         return curvePointRepository.save(curvePoint);
     }
 
