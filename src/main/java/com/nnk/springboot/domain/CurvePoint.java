@@ -1,5 +1,6 @@
 package com.nnk.springboot.domain;
 
+import jakarta.validation.constraints.Positive;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -22,11 +23,13 @@ public class CurvePoint {
     private Integer id;
 
     @NotNull(message = "CurveId is mandatory")
+    @Positive(message = "CurveId must be positive")
     private Integer curveId;
 
     private Timestamp asOfDate;
 
     @NotNull(message = "Term is mandatory")
+    @Positive(message = "Term must be positive")
     private Double term;
 
     @NotNull(message = "Value is mandatory")
