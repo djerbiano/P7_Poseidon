@@ -1,10 +1,8 @@
 package com.nnk.springboot.controllers;
 
 import com.nnk.springboot.domain.User;
-import com.nnk.springboot.repositories.UserRepository;
-import com.nnk.springboot.security.PasswordValidator;
+import com.nnk.springboot.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -17,13 +15,13 @@ import jakarta.validation.Valid;
 
 @Controller
 public class UserController {
+
     @Autowired
-    private UserRepository userRepository;
+    private UserService userService;
 
     @RequestMapping("/user/list")
-    public String home(Model model)
-    {
-        model.addAttribute("users", userRepository.findAll());
+    public String home(Model model) {
+        model.addAttribute("users", userService.findAll());
         return "user/list";
     }
 
@@ -33,7 +31,7 @@ public class UserController {
     }
 
     @PostMapping("/user/validate")
-    public String validate(@Valid User user, BindingResult result, Model model) {
+    public String validate(@Valid User user, BindingResult result) {
         if (result.hasErrors()) {
             return "user/add";
         }
@@ -41,21 +39,18 @@ public class UserController {
             result.rejectValue("password", "error.user", "Password is mandatory");
             return "user/add";
         }
-        if (!PasswordValidator.isValid(user.getPassword())) {
+        if (!userService.isPasswordValid(user.getPassword())) {
             result.rejectValue("password", "error.user",
                     "Password must contain at least 8 characters, one uppercase letter, one digit and one symbol");
             return "user/add";
         }
-        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(14);
-        user.setPassword(encoder.encode(user.getPassword()));
-        userRepository.save(user);
-        model.addAttribute("users", userRepository.findAll());
+        userService.createUser(user);
         return "redirect:/user/list";
     }
 
     @GetMapping("/user/update/{id}")
     public String showUpdateForm(@PathVariable("id") Integer id, Model model) {
-        User user = userRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Invalid user Id:" + id));
+        User user = userService.findById(id);
         user.setPassword("");
         model.addAttribute("user", user);
         return "user/update";
@@ -63,34 +58,23 @@ public class UserController {
 
     @PostMapping("/user/update/{id}")
     public String updateUser(@PathVariable("id") Integer id, @Valid User user,
-                             BindingResult result, Model model) {
+                             BindingResult result) {
         if (result.hasErrors()) {
             return "user/update";
         }
-        if (user.getPassword() == null || user.getPassword().isBlank()) {
-            User existingUser = userRepository.findById(id)
-                    .orElseThrow(() -> new IllegalArgumentException("Invalid user Id:" + id));
-            user.setPassword(existingUser.getPassword());
-        } else {
-            if (!PasswordValidator.isValid(user.getPassword())) {
-                result.rejectValue("password", "error.user",
-                        "Password must contain at least 8 characters, one uppercase letter, one digit and one symbol");
-                return "user/update";
-            }
-            BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(14);
-            user.setPassword(encoder.encode(user.getPassword()));
+        if (user.getPassword() != null && !user.getPassword().isBlank()
+                && !userService.isPasswordValid(user.getPassword())) {
+            result.rejectValue("password", "error.user",
+                    "Password must contain at least 8 characters, one uppercase letter, one digit and one symbol");
+            return "user/update";
         }
-        user.setId(id);
-        userRepository.save(user);
-        model.addAttribute("users", userRepository.findAll());
+        userService.updateUser(id, user);
         return "redirect:/user/list";
     }
 
     @GetMapping("/user/delete/{id}")
-    public String deleteUser(@PathVariable("id") Integer id, Model model) {
-        User user = userRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Invalid user Id:" + id));
-        userRepository.delete(user);
-        model.addAttribute("users", userRepository.findAll());
+    public String deleteUser(@PathVariable("id") Integer id) {
+        userService.deleteById(id);
         return "redirect:/user/list";
     }
 }
