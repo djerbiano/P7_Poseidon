@@ -2,14 +2,54 @@ package com.nnk.springboot.domain;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.sql.Timestamp;
 
 
 @Entity
 @Table(name = "trade")
+@Getter
+@Setter
+@NoArgsConstructor
 public class Trade {
-    // TODO: Map columns in data table TRADE with corresponding java fields
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer tradeId;
+
+    @NotBlank(message = "Account is mandatory")
+    private String account;
+
+    @NotBlank(message = "Type is mandatory")
+    private String type;
+
+    @NotNull(message = "Quantity is mandatory")
+    private Double buyQuantity;
+
+    private Double sellQuantity;
+    private Double buyPrice;
+    private Double sellPrice;
+    private String benchmark;
+    private Timestamp tradeDate;
+    private String security;
+    private String status;
+    private String trader;
+    private String book;
+    private String creationName;
+    private Timestamp creationDate;
+    private String revisionName;
+    private Timestamp revisionDate;
+    private String dealName;
+    private String dealType;
+    private String sourceListId;
+    private String side;
+
+    public Trade(String account, String type) {
+        this.account = account;
+        this.type = type;
+    }
 }
