@@ -27,15 +27,14 @@ public class SecurityConfig {
         http
                 .userDetailsService(customUserDetailsService)
                 .authorizeHttpRequests(auth->auth
-                        .requestMatchers("/app/login","/css/**").permitAll()
+                        .requestMatchers("/login","/","/css/**").permitAll()
                         .anyRequest().authenticated())
                 .formLogin(form->form
-                        .loginPage("/app/login")
+                        .loginPage("/login")
                         .defaultSuccessUrl("/bidList/list",true)
                 .permitAll())
                 .logout(logout -> logout
-                        .logoutUrl("/app-logout")
-                        .logoutSuccessUrl("/app/login")
+                        .logoutSuccessUrl("/login")
                         .permitAll());
         return http.build();
     }
