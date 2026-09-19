@@ -8,13 +8,11 @@
 </head>
 <body>
 <div class="container">
+	<div class="row justify-content-center" style="margin-top: 60px;">
+		<div class="col-md-8">
+			<h2>Add New Rating</h2>
 
-	<div class="row">
-		<h2>Add New Rating</h2>
-	</div>
-
-	<div class="row">
-		<form action="#" th:action="@{/rating/validate}" th:object="${rating}" method="post" class="form-horizontal" style="width: 100%">
+			<form action="#" th:action="@{/rating/validate}" th:object="${rating}" method="post" class="form-horizontal" style="width: 100%">
 			<p class="text-danger" th:if="${#fields.hasErrors('global')}" th:errors="*{global}"></p>
 			<div class="form-group">
 				<label for="moodysRating" class="col-sm-2 control-label">MoodysRating</label>
@@ -52,9 +50,9 @@
 					<input class="btn btn-primary btn-sm" type="submit" value="Add Rating">
 				</div>
 			</div>
-		</form>
+			</form>
+		</div>
 	</div>
-
 </div>
 </body>
 </html>

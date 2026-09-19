@@ -3,16 +3,24 @@
       xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
+    <meta charset="utf-8"/>
     <title> Spring Boot </title>
     <link rel="stylesheet" href="/css/bootstrap.min.css">
 </head>
 <body>
-<h3> HOME PAGE </h3>
-<p sec:authorize="isAuthenticated()">
-    Welcome back, <b>[[${#authentication.name}]]</b> — <a href="/bidList/list">Go to your dashboard</a>
-</p>
-<p sec:authorize="!isAuthenticated()">
-    <a href="/login">Login</a>
-</p>
+<div class="container">
+    <div class="row justify-content-center" style="margin-top: 100px;">
+        <div class="col-auto text-center">
+            <h3>HOME PAGE</h3>
+            <p sec:authorize="isAuthenticated()">
+                Welcome back, <b>[[${#authentication.name}]]</b><br/>
+                <a href="/bidList/list" class="btn btn-primary btn-sm" style="margin-top: 10px;">Go to your dashboard</a>
+            </p>
+            <p sec:authorize="!isAuthenticated()">
+                <a href="/login" class="btn btn-primary btn-sm">Login</a>
+            </p>
+        </div>
+    </div>
+</div>
 </body>
 </html>
