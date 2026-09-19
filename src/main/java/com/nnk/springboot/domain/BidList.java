@@ -1,5 +1,7 @@
 package com.nnk.springboot.domain;
 
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -25,7 +27,10 @@ public class BidList {
     @NotBlank(message = "Type is mandatory")
     private String type;
 
+    @NotNull(message = "BidQuantity is mandatory")
+    @Positive(message = "BidQuantity must be positive")
     private Double bidQuantity;
+
     private Double askQuantity;
     private Double bid;
     private Double ask;
