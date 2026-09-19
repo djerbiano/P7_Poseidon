@@ -13,7 +13,6 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class RuleName {
-    // TODO: Map columns in data table RULENAME with corresponding java fields
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -21,10 +20,19 @@ public class RuleName {
     @NotBlank(message = "Name is mandatory")
     private String name;
 
+    @NotBlank(message = "Description is mandatory")
     private String description;
+
+    @NotBlank(message = "Json is mandatory")
     private String json;
+
+    @NotBlank(message = "Template is mandatory")
     private String template;
+
+    @NotBlank(message = "SqlStr is mandatory")
     private String sqlStr;
+
+    @NotBlank(message = "SqlPart is mandatory")
     private String sqlPart;
 
     public RuleName(String name, String description, String json, String template, String sqlStr, String sqlPart) {

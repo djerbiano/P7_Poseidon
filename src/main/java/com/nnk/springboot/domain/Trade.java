@@ -3,6 +3,7 @@ package com.nnk.springboot.domain;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -28,6 +29,7 @@ public class Trade {
     private String type;
 
     @NotNull(message = "Quantity is mandatory")
+    @Positive(message = "Quantity must be positive")
     private Double buyQuantity;
 
     private Double sellQuantity;
