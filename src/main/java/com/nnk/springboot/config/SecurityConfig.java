@@ -27,12 +27,14 @@ public class SecurityConfig {
         http
                 .userDetailsService(customUserDetailsService)
                 .authorizeHttpRequests(auth->auth
-                        .requestMatchers("/login","/","/css/**","/error").permitAll()
+                        .requestMatchers("/login","/","/css/**", "/access-denied").permitAll()
                         .anyRequest().authenticated())
                 .formLogin(form->form
                         .loginPage("/login")
                         .defaultSuccessUrl("/bidList/list",true)
                 .permitAll())
+                .exceptionHandling(exception->exception
+                        .accessDeniedPage("/access-denied"))
                 .logout(logout -> logout
                         .logoutSuccessUrl("/login")
                         .permitAll());
