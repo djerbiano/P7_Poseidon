@@ -10,10 +10,28 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 
+/**
+ * Implémentation personnalisée de {@link UserDetailsService}, utilisée par
+ * Spring Security pour charger un utilisateur lors de l'authentification.
+ * Fait le lien entre l'entité {@link User} de l'application et l'objet
+ * {@link UserDetails} attendu par le framework de sécurité.
+ */
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
+
     @Autowired
     private UserRepository userRepository;
+
+    /**
+     * Recherche un utilisateur par son nom d'utilisateur et le convertit
+     * en {@link UserDetails} exploitable par Spring Security.
+     * Si l'utilisateur n'existe pas, une exception est levée avec un message
+     * générique, afin d'éviter toute énumération des comptes existants.
+     *
+     * @param username le nom d'utilisateur recherché
+     * @return les informations d'authentification de l'utilisateur trouvé
+     * @throws UsernameNotFoundException si aucun utilisateur ne correspond
+     */
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = userRepository.findByUsername(username);
