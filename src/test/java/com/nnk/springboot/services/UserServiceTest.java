@@ -132,6 +132,26 @@ public class UserServiceTest {
     }
 
     /**
+     * Vérifie que updateUser() conserve l'ancien mot de passe hashé
+     * quand le nouveau mot de passe est null (pas transmis du tout).
+     */
+    @Test
+    void updateUser_shouldKeepOldPassword_whenNewPasswordIsNull() {
+        when(userRepository.findById(1)).thenReturn(Optional.of(user));
+
+        User candidate = new User();
+        candidate.setUsername("testuser");
+        candidate.setPassword(null);
+        candidate.setFullname("Test User Update");
+        candidate.setRole("USER");
+
+        userService.updateUser(1, candidate);
+
+        assertEquals("OldHashedPassword123!", candidate.getPassword());
+        verify(userRepository, times(1)).save(candidate);
+    }
+
+    /**
      * Vérifie que updateUser() hash le nouveau mot de passe quand il est renseigné.
      */
     @Test
