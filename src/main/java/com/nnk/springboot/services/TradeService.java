@@ -8,6 +8,10 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+/**
+ * Service métier gérant les opérations CRUD sur l'entité {@link Trade}.
+ * Il s'appuie sur {@link TradeRepository} pour l'accès aux données.
+ */
 @Service
 public class TradeService {
 

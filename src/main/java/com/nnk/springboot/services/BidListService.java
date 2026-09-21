@@ -8,6 +8,10 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+/**
+ * Service métier gérant les opérations CRUD sur l'entité {@link BidList}.
+ * Il s'appuie sur {@link BidListRepository} pour l'accès aux données.
+ */
 @Service
 public class BidListService {
     @Autowired

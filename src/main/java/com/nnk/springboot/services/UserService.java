@@ -10,6 +10,12 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+/**
+ * Service métier gérant les utilisateurs de l'application.
+ * Il assure le hachage des mots de passe avec BCrypt (facteur de coût 14)
+ * avant toute persistance, et délègue la validation de leur robustesse
+ * à {@link PasswordValidator}.
+ */
 @Service
 public class UserService {
 

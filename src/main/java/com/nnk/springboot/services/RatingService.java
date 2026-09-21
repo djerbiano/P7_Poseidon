@@ -8,6 +8,11 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+/**
+ * Service métier gérant les opérations CRUD sur l'entité {@link Rating}.
+ * Il porte également la règle métier exigeant qu'au moins une note d'agence
+ * soit renseignée.
+ */
 @Service
 public class RatingService {
     @Autowired

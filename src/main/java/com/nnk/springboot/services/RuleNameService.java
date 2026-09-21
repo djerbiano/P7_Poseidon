@@ -8,6 +8,10 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+/**
+ * Service métier gérant les opérations CRUD sur l'entité {@link RuleName}.
+ * Il s'appuie sur {@link RuleNameRepository} pour l'accès aux données.
+ */
 @Service
 public class RuleNameService {
 

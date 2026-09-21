@@ -9,6 +9,11 @@ import org.springframework.stereotype.Service;
 import java.sql.Timestamp;
 import java.util.List;
 
+/**
+ * Service métier gérant les opérations CRUD sur l'entité {@link CurvePoint}.
+ * Il gère automatiquement les dates {@code creationDate} et {@code asOfDate}
+ * lors de l'enregistrement.
+ */
 @Service
 public class CurvePointService {
 
