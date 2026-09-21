@@ -10,6 +10,11 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import java.sql.Timestamp;
 
+/**
+ * Représente une offre d'achat (bid) soumise par un compte pour un
+ * instrument financier donné, avec la quantité proposée et les
+ * informations de suivi associées (trader, book, dates de révision, etc.).
+ */
 @Entity
 @Table(name = "bidlist")
 @Getter

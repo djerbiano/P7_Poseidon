@@ -7,7 +7,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-
+/**
+ * Représente la notation de crédit d'un titre financier, telle qu'attribuée
+ * par les trois principales agences de notation (Moody's, Standard &amp; Poor's,
+ * Fitch).
+ */
 @Entity
 @Table(name = "rating")
 @Getter
@@ -19,8 +23,23 @@ public class Rating {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    /**
+     * Notation attribuée par l'agence Moody's. Aucun des trois champs de
+     * notation n'est individuellement obligatoire : le service vérifie
+     * qu'au moins l'un d'entre eux est renseigné.
+     */
     private String moodysRating;
+
+    /**
+     * Notation attribuée par l'agence Standard &amp; Poor's. Voir
+     * {@link #moodysRating} pour la règle de validation appliquée.
+     */
     private String sandPRating;
+
+    /**
+     * Notation attribuée par l'agence Fitch. Voir
+     * {@link #moodysRating} pour la règle de validation appliquée.
+     */
     private String fitchRating;
 
     @NotNull(message = "OrderNumber is mandatory")

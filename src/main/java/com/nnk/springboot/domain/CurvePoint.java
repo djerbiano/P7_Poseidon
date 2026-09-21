@@ -10,7 +10,11 @@ import jakarta.validation.constraints.NotNull;
 
 import java.sql.Timestamp;
 
-
+/**
+ * Représente un point sur une courbe de taux d'intérêt : pour une courbe
+ * donnée ({@code curveId}), associe une échéance ({@code term}) à un taux
+ * ({@code value}) à une date donnée.
+ */
 @Entity
 @Table(name = "curvepoint")
 @Getter
@@ -26,6 +30,11 @@ public class CurvePoint {
     @Positive(message = "CurveId must be positive")
     private Integer curveId;
 
+    /**
+     * Date à laquelle ce point de courbe est valide. Renseignée
+     * automatiquement par le service lors de chaque sauvegarde,
+     * jamais saisie par l'utilisateur.
+     */
     private Timestamp asOfDate;
 
     @NotNull(message = "Term is mandatory")
@@ -35,6 +44,11 @@ public class CurvePoint {
     @NotNull(message = "Value is mandatory")
     private Double value;
 
+    /**
+     * Date de création de l'enregistrement. Renseignée automatiquement
+     * par le service lors de la première sauvegarde, et jamais modifiée
+     * par la suite.
+     */
     private Timestamp creationDate;
 
     public CurvePoint(Integer curveId, Double term, Double value) {

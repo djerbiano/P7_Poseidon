@@ -10,7 +10,11 @@ import lombok.Setter;
 
 import java.sql.Timestamp;
 
-
+/**
+ * Représente une transaction effectivement réalisée (achat ou vente d'un
+ * instrument financier), avec les quantités et prix associés, ainsi que
+ * les informations de suivi (trader, book, dates de révision, etc.).
+ */
 @Entity
 @Table(name = "trade")
 @Getter

@@ -6,7 +6,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-
+/**
+ * Représente une règle métier, définissant une logique (SQL, template,
+ * JSON) qui peut être appliquée dynamiquement par l'application.
+ */
 @Entity
 @Table(name = "rulename")
 @Getter
