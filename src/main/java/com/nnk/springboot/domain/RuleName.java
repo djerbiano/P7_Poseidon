@@ -38,6 +38,17 @@ public class RuleName {
     @NotBlank(message = "SqlPart is mandatory")
     private String sqlPart;
 
+    /**
+     * Construit un RuleName avec l'ensemble de ses champs métier, sans
+     * identifiant.
+     *
+     * @param name        le nom de la règle
+     * @param description la description de la règle
+     * @param json        la définition JSON de la règle
+     * @param template    le template associé à la règle
+     * @param sqlStr      la requête SQL de la règle
+     * @param sqlPart     la partie SQL de la règle
+     */
     public RuleName(String name, String description, String json, String template, String sqlStr, String sqlPart) {
         this.name = name;
         this.description = description;

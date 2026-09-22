@@ -55,6 +55,15 @@ public class BidList {
     private String sourceListId;
     private String side;
 
+    /**
+     * Construit une BidList avec ses champs essentiels, sans identifiant
+     * ni date d'ajout. Utilisé notamment par les tests unitaires pour créer
+     * des instances sans passer par tous les champs de l'entité.
+     *
+     * @param account     le compte associé à la BidList
+     * @param type        le type de BidList
+     * @param bidQuantity la quantité proposée
+     */
     public BidList(String account, String type, Double bidQuantity) {
         this.account = account;
         this.type = type;

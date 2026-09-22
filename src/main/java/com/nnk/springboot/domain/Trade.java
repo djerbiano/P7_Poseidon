@@ -54,6 +54,14 @@ public class Trade {
     private String sourceListId;
     private String side;
 
+    /**
+     * Construit un Trade avec ses champs essentiels, sans identifiant.
+     * Utilisé notamment par les tests unitaires pour créer des instances
+     * sans passer par tous les champs de l'entité.
+     *
+     * @param account le compte associé au Trade
+     * @param type    le type de Trade
+     */
     public Trade(String account, String type) {
         this.account = account;
         this.type = type;

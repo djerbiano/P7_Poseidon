@@ -46,6 +46,16 @@ public class Rating {
     @Positive(message = "OrderNumber must be positive")
     private Integer orderNumber;
 
+    /**
+     * Construit un Rating avec ses champs essentiels, sans identifiant.
+     * Utilisé notamment par les tests unitaires pour créer des instances
+     * sans passer par tous les champs de l'entité.
+     *
+     * @param moodysRating la note attribuée par Moody's
+     * @param sandPRating  la note attribuée par Standard &amp; Poor's
+     * @param fitchRating  la note attribuée par Fitch
+     * @param orderNumber  le numéro d'ordre du Rating
+     */
     public Rating(String moodysRating, String sandPRating, String fitchRating, Integer orderNumber) {
         this.moodysRating = moodysRating;
         this.sandPRating = sandPRating;

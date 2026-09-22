@@ -51,6 +51,16 @@ public class CurvePoint {
      */
     private Timestamp creationDate;
 
+    /**
+     * Construit un CurvePoint avec ses champs essentiels, sans identifiant
+     * ni dates de création/mise à jour. Utilisé notamment par les tests
+     * unitaires pour créer des instances sans passer par tous les champs
+     * de l'entité.
+     *
+     * @param curveId l'identifiant de la courbe associée
+     * @param term    le terme du point de courbe
+     * @param value   la valeur du point de courbe
+     */
     public CurvePoint(Integer curveId, Double term, Double value) {
         this.curveId = curveId;
         this.term = term;
