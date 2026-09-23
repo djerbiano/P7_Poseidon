@@ -1,12 +1,13 @@
 package com.nnk.springboot.controllers;
 
-import com.nnk.springboot.domain.BidList;
+import com.nnk.springboot.dto.BidListDto;
 import com.nnk.springboot.services.BidListService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,8 +16,9 @@ import jakarta.validation.Valid;
 
 /**
  * Contrôleur MVC gérant les pages CRUD des BidList (liste, ajout,
- * modification, suppression). Délègue toute la logique métier à
- * {@link BidListService}.
+ * modification, suppression). Les données soumises par les formulaires
+ * sont reçues sous forme de {@link BidListDto}. Délègue toute la logique
+ * métier à {@link BidListService}.
  */
 @Controller
 public class BidListController {
@@ -31,8 +33,7 @@ public class BidListController {
      * @return le nom de la vue affichant la liste
      */
     @RequestMapping("/bidList/list")
-    public String home(Model model)
-    {
+    public String home(Model model) {
         model.addAttribute("bidLists", bidListService.findAll());
         return "bidList/list";
     }
@@ -40,11 +41,12 @@ public class BidListController {
     /**
      * Affiche le formulaire d'ajout d'une nouvelle BidList.
      *
-     * @param bid une BidList vide liée au formulaire
+     * @param model le modèle Spring MVC, alimenté avec un DTO vide
      * @return le nom de la vue du formulaire d'ajout
      */
     @GetMapping("/bidList/add")
-    public String addBidForm(BidList bid) {
+    public String addBidForm(Model model) {
+        model.addAttribute("bidList", new BidListDto());
         return "bidList/add";
     }
 
@@ -52,17 +54,18 @@ public class BidListController {
      * Valide et enregistre une nouvelle BidList soumise depuis le formulaire
      * d'ajout. En cas d'erreur de validation, réaffiche le formulaire.
      *
-     * @param bid    la BidList soumise, validée par les contraintes de l'entité
-     * @param result le résultat de la validation
+     * @param bidList le DTO soumis, validé par ses contraintes
+     * @param result  le résultat de la validation
      * @return le nom de la vue du formulaire en cas d'erreur, sinon une
      *         redirection vers la liste
      */
     @PostMapping("/bidList/validate")
-    public String validate(@Valid BidList bid, BindingResult result) {
+    public String validate(@Valid @ModelAttribute("bidList") BidListDto bidList,
+                           BindingResult result) {
         if (result.hasErrors()) {
             return "bidList/add";
         }
-        bidListService.save(bid);
+        bidListService.create(bidList);
         return "redirect:/bidList/list";
     }
 
@@ -75,29 +78,30 @@ public class BidListController {
      */
     @GetMapping("/bidList/update/{id}")
     public String showUpdateForm(@PathVariable("id") Integer id, Model model) {
-        BidList bidList = bidListService.findById(id);
-        model.addAttribute("bidList", bidList);
+        model.addAttribute("bidList", bidListService.findById(id));
         return "bidList/update";
     }
 
     /**
      * Valide et enregistre les modifications apportées à une BidList
-     * existante. En cas d'erreur de validation, réaffiche le formulaire.
+     * existante. L'identifiant utilisé est toujours celui de l'URL. En cas
+     * d'erreur de validation, réaffiche le formulaire.
      *
-     * @param id       l'identifiant de la BidList à mettre à jour
-     * @param bidList  la BidList soumise, validée par les contraintes de l'entité
-     * @param result   le résultat de la validation
+     * @param id      l'identifiant de la BidList à mettre à jour
+     * @param bidList le DTO soumis, validé par ses contraintes
+     * @param result  le résultat de la validation
      * @return le nom de la vue du formulaire en cas d'erreur, sinon une
      *         redirection vers la liste
      */
     @PostMapping("/bidList/update/{id}")
-    public String updateBid(@PathVariable("id") Integer id, @Valid BidList bidList,
-                             BindingResult result) {
+    public String updateBid(@PathVariable("id") Integer id,
+                            @Valid @ModelAttribute("bidList") BidListDto bidList,
+                            BindingResult result) {
         if (result.hasErrors()) {
+            bidList.setBidListId(id);
             return "bidList/update";
         }
-        bidList.setBidListId(id);
-        bidListService.save(bidList);
+        bidListService.update(id, bidList);
         return "redirect:/bidList/list";
     }
 

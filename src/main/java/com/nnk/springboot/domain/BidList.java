@@ -1,13 +1,10 @@
 package com.nnk.springboot.domain;
 
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
 import java.sql.Timestamp;
 
 /**
@@ -26,16 +23,9 @@ public class BidList {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer bidListId;
 
-    @NotBlank(message = "Account is mandatory")
     private String account;
-
-    @NotBlank(message = "Type is mandatory")
     private String type;
-
-    @NotNull(message = "BidQuantity is mandatory")
-    @Positive(message = "BidQuantity must be positive")
     private Double bidQuantity;
-
     private Double askQuantity;
     private Double bid;
     private Double ask;
@@ -57,8 +47,9 @@ public class BidList {
 
     /**
      * Construit une BidList avec ses champs essentiels, sans identifiant
-     * ni date d'ajout. Utilisé notamment par les tests unitaires pour créer
-     * des instances sans passer par tous les champs de l'entité.
+     * ni date d'ajout. Utilisé par {@code BidListService} lors d'une
+     * création et par les tests unitaires pour créer des instances sans
+     * passer par tous les champs de l'entité.
      *
      * @param account     le compte associé à la BidList
      * @param type        le type de BidList

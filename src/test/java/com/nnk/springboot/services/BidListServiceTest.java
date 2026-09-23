@@ -1,6 +1,7 @@
 package com.nnk.springboot.services;
 
 import com.nnk.springboot.domain.BidList;
+import com.nnk.springboot.dto.BidListDto;
 import com.nnk.springboot.exceptions.ResourceNotFoundException;
 import com.nnk.springboot.repositories.BidListRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,11 +32,17 @@ public class BidListServiceTest {
     private BidListService bidListService;
 
     private BidList bidList;
+    private BidListDto dto;
 
     @BeforeEach
     void setUp() {
         bidList = new BidList("Account Test", "Type Test", 10d);
         bidList.setBidListId(1);
+
+        dto = new BidListDto();
+        dto.setAccount("New Account");
+        dto.setType("New Type");
+        dto.setBidQuantity(20d);
     }
 
     /**
@@ -75,16 +82,53 @@ public class BidListServiceTest {
     }
 
     /**
-     * Vérifie que save() délègue bien au repository et retourne l'objet sauvegardé.
+     * Vérifie que create() enregistre une nouvelle BidList contenant les champs
+     * du formulaire, en ignorant tout identifiant fourni par l'utilisateur.
      */
     @Test
-    void save_shouldCallRepositoryAndReturnSavedBidList() {
-        when(bidListRepository.save(any(BidList.class))).thenReturn(bidList);
+    void create_shouldSaveNewEntity_andIgnoreIdFromDto() {
+        dto.setBidListId(42);
 
-        BidList result = bidListService.save(bidList);
+        bidListService.create(dto);
 
-        assertNotNull(result);
+        verify(bidListRepository, times(1)).save(argThat((BidList saved) ->
+                saved.getBidListId() == null
+                        && "New Account".equals(saved.getAccount())
+                        && "New Type".equals(saved.getType())
+                        && saved.getBidQuantity().equals(20d)));
+    }
+
+    /**
+     * Vérifie que update() modifie uniquement les champs du formulaire et
+     * conserve les autres colonnes de l'entité existante.
+     */
+    @Test
+    void update_shouldOverwriteFormFields_andKeepOtherFields() {
+        bidList.setTrader("Trader Original");
+        bidList.setBook("Book Original");
+        when(bidListRepository.findById(1)).thenReturn(Optional.of(bidList));
+
+        bidListService.update(1, dto);
+
         verify(bidListRepository, times(1)).save(bidList);
+        assertEquals(1, bidList.getBidListId());
+        assertEquals("New Account", bidList.getAccount());
+        assertEquals("New Type", bidList.getType());
+        assertEquals(20d, bidList.getBidQuantity());
+        assertEquals("Trader Original", bidList.getTrader());
+        assertEquals("Book Original", bidList.getBook());
+    }
+
+    /**
+     * Vérifie que update() lève ResourceNotFoundException si l'id n'existe pas,
+     * sans jamais appeler save().
+     */
+    @Test
+    void update_shouldThrowException_whenIdDoesNotExist() {
+        when(bidListRepository.findById(99)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> bidListService.update(99, dto));
+        verify(bidListRepository, never()).save(any());
     }
 
     /**

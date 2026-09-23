@@ -1,6 +1,7 @@
 package com.nnk.springboot.controllers;
 
 import com.nnk.springboot.domain.BidList;
+import com.nnk.springboot.dto.BidListDto;
 import com.nnk.springboot.security.CustomUserDetailsService;
 import com.nnk.springboot.services.BidListService;
 import org.junit.jupiter.api.Test;
@@ -12,6 +13,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
+import static org.hamcrest.Matchers.hasProperty;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -20,7 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * Tests unitaires pour {@link BidListController}.
  * Utilise @WebMvcTest pour tester la couche HTTP (routes, statuts, redirections)
- * en isolant le controller du reste de l'application, avec BidListService simule.
+ * en isolant le controller du reste de l'application, avec BidListService simulé.
  */
 @WebMvcTest(BidListController.class)
 public class BidListControllerTest {
@@ -35,7 +38,7 @@ public class BidListControllerTest {
     private CustomUserDetailsService customUserDetailsService;
 
     /**
-     * Vérifie que la liste des BidList s'affiche correctement pour un utilisateur connecte.
+     * Vérifie que la liste des BidList s'affiche correctement pour un utilisateur connecté.
      */
     @Test
     @WithMockUser
@@ -44,22 +47,24 @@ public class BidListControllerTest {
 
         mockMvc.perform(get("/bidList/list"))
                 .andExpect(status().isOk())
-                .andExpect(view().name("bidList/list"));
+                .andExpect(view().name("bidList/list"))
+                .andExpect(model().attributeExists("bidLists"));
     }
 
     /**
-     * Vérifie que le formulaire d'ajout s'affiche correctement.
+     * Vérifie que le formulaire d'ajout s'affiche avec un DTO vide.
      */
     @Test
     @WithMockUser
     void addForm_shouldReturnAddView() throws Exception {
         mockMvc.perform(get("/bidList/add"))
                 .andExpect(status().isOk())
-                .andExpect(view().name("bidList/add"));
+                .andExpect(view().name("bidList/add"))
+                .andExpect(model().attributeExists("bidList"));
     }
 
     /**
-     * Vérifie qu'une soumission valide redirige vers la liste et appelle save().
+     * Vérifie qu'une soumission valide redirige vers la liste et appelle create().
      */
     @Test
     @WithMockUser
@@ -72,7 +77,7 @@ public class BidListControllerTest {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/bidList/list"));
 
-        verify(bidListService, times(1)).save(any(BidList.class));
+        verify(bidListService, times(1)).create(any(BidListDto.class));
     }
 
     /**
@@ -87,11 +92,11 @@ public class BidListControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("bidList/add"));
 
-        verify(bidListService, never()).save(any(BidList.class));
+        verify(bidListService, never()).create(any(BidListDto.class));
     }
 
     /**
-     * Vérifie que le formulaire de modification s'affiche avec les donnees existantes.
+     * Vérifie que le formulaire de modification s'affiche avec les données existantes.
      */
     @Test
     @WithMockUser
@@ -102,11 +107,13 @@ public class BidListControllerTest {
 
         mockMvc.perform(get("/bidList/update/1"))
                 .andExpect(status().isOk())
-                .andExpect(view().name("bidList/update"));
+                .andExpect(view().name("bidList/update"))
+                .andExpect(model().attribute("bidList", hasProperty("bidListId", is(1))));
     }
 
     /**
-     * Vérifie qu'une soumission de mise à jour valide redirige vers la liste.
+     * Vérifie qu'une soumission de mise à jour valide appelle update() avec
+     * l'identifiant de l'URL, puis redirige vers la liste.
      */
     @Test
     @WithMockUser
@@ -119,11 +126,12 @@ public class BidListControllerTest {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/bidList/list"));
 
-        verify(bidListService, times(1)).save(any(BidList.class));
+        verify(bidListService, times(1)).update(eq(1), any(BidListDto.class));
     }
 
     /**
-     * Vérifie qu'une soumission de mise à jour invalide affiche le formulaire.
+     * Vérifie qu'une soumission de mise à jour invalide réaffiche le formulaire
+     * avec l'identifiant de l'URL remis dans le DTO, sans appeler update().
      */
     @Test
     @WithMockUser
@@ -132,9 +140,10 @@ public class BidListControllerTest {
                         .with(csrf())
                         .param("bidQuantity", "10"))
                 .andExpect(status().isOk())
-                .andExpect(view().name("bidList/update"));
+                .andExpect(view().name("bidList/update"))
+                .andExpect(model().attribute("bidList", hasProperty("bidListId", is(1))));
 
-        verify(bidListService, never()).save(any(BidList.class));
+        verify(bidListService, never()).update(anyInt(), any(BidListDto.class));
     }
 
     /**
