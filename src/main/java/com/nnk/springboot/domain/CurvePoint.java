@@ -1,13 +1,10 @@
 package com.nnk.springboot.domain;
 
-import jakarta.validation.constraints.Positive;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
-
 import java.sql.Timestamp;
 
 /**
@@ -26,36 +23,29 @@ public class CurvePoint {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @NotNull(message = "CurveId is mandatory")
-    @Positive(message = "CurveId must be positive")
     private Integer curveId;
 
     /**
      * Date à laquelle ce point de courbe est valide. Renseignée
-     * automatiquement par le service lors de chaque sauvegarde,
-     * jamais saisie par l'utilisateur.
+     * automatiquement par le service lors de chaque création ou mise à
+     * jour, jamais saisie par l'utilisateur.
      */
     private Timestamp asOfDate;
 
-    @NotNull(message = "Term is mandatory")
-    @Positive(message = "Term must be positive")
     private Double term;
-
-    @NotNull(message = "Value is mandatory")
     private Double value;
 
     /**
      * Date de création de l'enregistrement. Renseignée automatiquement
-     * par le service lors de la première sauvegarde, et jamais modifiée
-     * par la suite.
+     * par le service lors de la création, et jamais modifiée par la suite.
      */
     private Timestamp creationDate;
 
     /**
      * Construit un CurvePoint avec ses champs essentiels, sans identifiant
-     * ni dates de création/mise à jour. Utilisé notamment par les tests
-     * unitaires pour créer des instances sans passer par tous les champs
-     * de l'entité.
+     * ni dates de création/mise à jour. Utilisé par {@code CurvePointService}
+     * lors d'une création et par les tests unitaires pour créer des
+     * instances sans passer par tous les champs de l'entité.
      *
      * @param curveId l'identifiant de la courbe associée
      * @param term    le terme du point de courbe

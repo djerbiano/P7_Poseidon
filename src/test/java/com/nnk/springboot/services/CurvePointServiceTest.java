@@ -1,6 +1,7 @@
 package com.nnk.springboot.services;
 
 import com.nnk.springboot.domain.CurvePoint;
+import com.nnk.springboot.dto.CurvePointDto;
 import com.nnk.springboot.exceptions.ResourceNotFoundException;
 import com.nnk.springboot.repositories.CurvePointRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,6 +11,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,11 +33,17 @@ public class CurvePointServiceTest {
     private CurvePointService curvePointService;
 
     private CurvePoint curvePoint;
+    private CurvePointDto dto;
 
     @BeforeEach
     void setUp() {
         curvePoint = new CurvePoint(10, 5.0, 20.0);
         curvePoint.setId(1);
+
+        dto = new CurvePointDto();
+        dto.setCurveId(30);
+        dto.setTerm(7.0);
+        dto.setValue(40.0);
     }
 
     /**
@@ -76,35 +84,60 @@ public class CurvePointServiceTest {
     }
 
     /**
-     * Vérifie que save() délègue bien au repository et retourne l'objet sauvegardé.
+     * Vérifie que create() enregistre un nouveau CurvePoint contenant les champs
+     * du formulaire et ses deux dates, en ignorant tout identifiant fourni par
+     * l'utilisateur.
      */
     @Test
-    void save_shouldCallRepositoryAndReturnSavedCurvePoint() {
-        when(curvePointRepository.findById(1)).thenReturn(Optional.of(curvePoint));
-        when(curvePointRepository.save(any(CurvePoint.class))).thenReturn(curvePoint);
+    void create_shouldSaveNewEntityWithDates_andIgnoreIdFromDto() {
+        dto.setId(42);
 
-        CurvePoint result = curvePointService.save(curvePoint);
+        curvePointService.create(dto);
 
-        assertNotNull(result);
-        verify(curvePointRepository, times(1)).save(curvePoint);
+        verify(curvePointRepository, times(1)).save(
+                argThat((CurvePoint saved) ->
+                        saved.getId() == null
+                                && saved.getCurveId().equals(30)
+                                && saved.getTerm().equals(7.0)
+                                && saved.getValue().equals(40.0)
+                                && saved.getCreationDate() != null
+                                && saved.getAsOfDate() != null
+                )
+        );
     }
 
     /**
-     * Vérifie que save() fixe creationDate lors d'une création (id null),
-     * sans jamais appeler findById() pour aller chercher une ancienne valeur.
+     * Vérifie que update() modifie les champs du formulaire, met à jour
+     * asOfDate et conserve la creationDate d'origine.
      */
     @Test
-    void save_shouldSetCreationDate_whenCreatingNewCurvePoint() {
-        CurvePoint newCurvePoint = new CurvePoint(20, 3.0, 15.0);
-        // id reste null, comme lors d'une vraie création
+    void update_shouldOverwriteFormFields_keepCreationDate_andRefreshAsOfDate() {
+        Timestamp oldDate = Timestamp.valueOf("2020-01-01 00:00:00");
+        curvePoint.setCreationDate(oldDate);
+        curvePoint.setAsOfDate(oldDate);
+        when(curvePointRepository.findById(1)).thenReturn(Optional.of(curvePoint));
 
-        when(curvePointRepository.save(any(CurvePoint.class))).thenReturn(newCurvePoint);
+        curvePointService.update(1, dto);
 
-        curvePointService.save(newCurvePoint);
+        verify(curvePointRepository, times(1)).save(curvePoint);
+        assertEquals(1, curvePoint.getId());
+        assertEquals(30, curvePoint.getCurveId());
+        assertEquals(7.0, curvePoint.getTerm());
+        assertEquals(40.0, curvePoint.getValue());
+        assertEquals(oldDate, curvePoint.getCreationDate());
+        assertNotEquals(oldDate, curvePoint.getAsOfDate());
+    }
 
-        assertNotNull(newCurvePoint.getCreationDate());
-        verify(curvePointRepository, never()).findById(any());
-        verify(curvePointRepository, times(1)).save(newCurvePoint);
+    /**
+     * Vérifie que update() lève ResourceNotFoundException si l'id n'existe pas,
+     * sans jamais appeler save().
+     */
+    @Test
+    void update_shouldThrowException_whenIdDoesNotExist() {
+        when(curvePointRepository.findById(99)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> curvePointService.update(99, dto));
+        verify(curvePointRepository, never()).save(any());
     }
 
     /**

@@ -1,6 +1,7 @@
 package com.nnk.springboot.services;
 
 import com.nnk.springboot.domain.CurvePoint;
+import com.nnk.springboot.dto.CurvePointDto;
 import com.nnk.springboot.exceptions.ResourceNotFoundException;
 import com.nnk.springboot.repositories.CurvePointRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,12 +12,11 @@ import java.util.List;
 
 /**
  * Service métier gérant les opérations CRUD sur l'entité {@link CurvePoint}.
- * Il gère automatiquement les dates {@code creationDate} et {@code asOfDate}
- * lors de l'enregistrement.
+ * Il reçoit les données des formulaires sous forme de {@link CurvePointDto}
+ * et gère automatiquement les dates {@code creationDate} et {@code asOfDate}.
  */
 @Service
 public class CurvePointService {
-
     @Autowired
     private CurvePointRepository curvePointRepository;
 
@@ -42,27 +42,37 @@ public class CurvePointService {
     }
 
     /**
-     * Enregistre un CurvePoint en gérant automatiquement ses dates.
-     * <ul>
-     *   <li>Création (identifiant nul) : {@code creationDate} est fixée à l'instant courant.</li>
-     *   <li>Mise à jour : la {@code creationDate} d'origine est conservée.</li>
-     *   <li>Dans les deux cas, {@code asOfDate} est fixée à l'instant courant.</li>
-     * </ul>
+     * Crée un nouveau CurvePoint à partir des champs saisis dans le
+     * formulaire. {@code creationDate} et {@code asOfDate} sont fixées à
+     * l'instant courant. L'identifiant éventuellement présent dans le DTO
+     * est ignoré : il est généré par la base de données.
      *
-     * @param curvePoint le CurvePoint à enregistrer
-     * @return le CurvePoint enregistré
-     * @throws ResourceNotFoundException si l'identifiant fourni ne correspond à aucun CurvePoint existant
+     * @param dto les données soumises depuis le formulaire d'ajout
      */
-    public CurvePoint save(CurvePoint curvePoint) {
+    public void create(CurvePointDto dto) {
         Timestamp now = new Timestamp(System.currentTimeMillis());
-        if (curvePoint.getId() == null) {
-            curvePoint.setCreationDate(now);
-        } else {
-            CurvePoint existing = findById(curvePoint.getId());
-            curvePoint.setCreationDate(existing.getCreationDate());
-        }
+        CurvePoint curvePoint = new CurvePoint(dto.getCurveId(), dto.getTerm(), dto.getValue());
+        curvePoint.setCreationDate(now);
         curvePoint.setAsOfDate(now);
-        return curvePointRepository.save(curvePoint);
+        curvePointRepository.save(curvePoint);
+    }
+
+    /**
+     * Met à jour un CurvePoint existant. Seuls les champs du formulaire sont
+     * modifiés, {@code asOfDate} est fixée à l'instant courant, et la
+     * {@code creationDate} d'origine est conservée.
+     *
+     * @param id  l'identifiant du CurvePoint à modifier
+     * @param dto les nouvelles valeurs saisies dans le formulaire de modification
+     * @throws ResourceNotFoundException si aucun CurvePoint n'existe pour cet identifiant
+     */
+    public void update(Integer id, CurvePointDto dto) {
+        CurvePoint curvePoint = findById(id);
+        curvePoint.setCurveId(dto.getCurveId());
+        curvePoint.setTerm(dto.getTerm());
+        curvePoint.setValue(dto.getValue());
+        curvePoint.setAsOfDate(new Timestamp(System.currentTimeMillis()));
+        curvePointRepository.save(curvePoint);
     }
 
     /**
