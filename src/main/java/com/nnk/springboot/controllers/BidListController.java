@@ -45,7 +45,7 @@ public class BidListController {
      * @return le nom de la vue du formulaire d'ajout
      */
     @GetMapping("/bidList/add")
-    public String addBidForm(Model model) {
+    public String addBidListForm(Model model) {
         model.addAttribute("bidList", new BidListDto());
         return "bidList/add";
     }
@@ -94,9 +94,9 @@ public class BidListController {
      *         redirection vers la liste
      */
     @PostMapping("/bidList/update/{id}")
-    public String updateBid(@PathVariable("id") Integer id,
-                            @Valid @ModelAttribute("bidList") BidListDto bidList,
-                            BindingResult result) {
+    public String updateBidList(@PathVariable("id") Integer id,
+                                @Valid @ModelAttribute("bidList") BidListDto bidList,
+                                BindingResult result) {
         if (result.hasErrors()) {
             bidList.setBidListId(id);
             return "bidList/update";
@@ -112,7 +112,7 @@ public class BidListController {
      * @return une redirection vers la liste des BidList
      */
     @GetMapping("/bidList/delete/{id}")
-    public String deleteBid(@PathVariable("id") Integer id) {
+    public String deleteBidList(@PathVariable("id") Integer id) {
         bidListService.deleteById(id);
         return "redirect:/bidList/list";
     }

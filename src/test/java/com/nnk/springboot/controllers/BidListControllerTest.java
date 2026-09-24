@@ -117,7 +117,7 @@ public class BidListControllerTest {
      */
     @Test
     @WithMockUser
-    void updateBid_shouldRedirectToList_whenDataIsValid() throws Exception {
+    void updateBidList_shouldRedirectToList_whenDataIsValid() throws Exception {
         mockMvc.perform(post("/bidList/update/1")
                         .with(csrf())
                         .param("account", "Account Test")
@@ -135,7 +135,7 @@ public class BidListControllerTest {
      */
     @Test
     @WithMockUser
-    void updateBid_shouldReturnUpdateView_whenDataIsInvalid() throws Exception {
+    void updateBidList_shouldReturnUpdateView_whenDataIsInvalid() throws Exception {
         mockMvc.perform(post("/bidList/update/1")
                         .with(csrf())
                         .param("bidQuantity", "10"))
@@ -151,7 +151,7 @@ public class BidListControllerTest {
      */
     @Test
     @WithMockUser
-    void deleteBid_shouldRedirectToList() throws Exception {
+    void deleteBidList_shouldRedirectToList() throws Exception {
         mockMvc.perform(get("/bidList/delete/1"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/bidList/list"));
