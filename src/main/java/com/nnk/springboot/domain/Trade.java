@@ -1,9 +1,6 @@
 package com.nnk.springboot.domain;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -26,16 +23,10 @@ public class Trade {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer tradeId;
 
-    @NotBlank(message = "Account is mandatory")
+
     private String account;
-
-    @NotBlank(message = "Type is mandatory")
     private String type;
-
-    @NotNull(message = "Quantity is mandatory")
-    @Positive(message = "Quantity must be positive")
     private Double buyQuantity;
-
     private Double sellQuantity;
     private Double buyPrice;
     private Double sellPrice;
@@ -56,8 +47,9 @@ public class Trade {
 
     /**
      * Construit un Trade avec ses champs essentiels, sans identifiant.
-     * Utilisé notamment par les tests unitaires pour créer des instances
-     * sans passer par tous les champs de l'entité.
+     * Utilisé par {@code TradeService} lors d'une création et par les
+     * tests unitaires pour créer des instances sans passer par tous les
+     * champs de l'entité.
      *
      * @param account le compte associé au Trade
      * @param type    le type de Trade

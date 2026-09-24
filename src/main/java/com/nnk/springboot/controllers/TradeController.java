@@ -1,12 +1,13 @@
 package com.nnk.springboot.controllers;
 
-import com.nnk.springboot.domain.Trade;
+import com.nnk.springboot.dto.TradeDto;
 import com.nnk.springboot.services.TradeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,8 +16,9 @@ import jakarta.validation.Valid;
 
 /**
  * Contrôleur MVC gérant les pages CRUD des Trade (liste, ajout,
- * modification, suppression). Délègue toute la logique métier à
- * {@link TradeService}.
+ * modification, suppression). Les données soumises par les formulaires
+ * sont reçues sous forme de {@link TradeDto}. Délègue toute la logique
+ * métier à {@link TradeService}.
  */
 @Controller
 public class TradeController {
@@ -39,11 +41,12 @@ public class TradeController {
     /**
      * Affiche le formulaire d'ajout d'un nouveau Trade.
      *
-     * @param bid un Trade vide lié au formulaire
+     * @param model le modèle Spring MVC, alimenté avec un DTO vide
      * @return le nom de la vue du formulaire d'ajout
      */
     @GetMapping("/trade/add")
-    public String addTradeForm(Trade bid) {
+    public String addTradeForm(Model model) {
+        model.addAttribute("trade", new TradeDto());
         return "trade/add";
     }
 
@@ -51,17 +54,18 @@ public class TradeController {
      * Valide et enregistre un nouveau Trade soumis depuis le formulaire
      * d'ajout. En cas d'erreur de validation, réaffiche le formulaire.
      *
-     * @param trade  le Trade soumis, validé par les contraintes de l'entité
+     * @param trade  le DTO soumis, validé par ses contraintes
      * @param result le résultat de la validation
      * @return le nom de la vue du formulaire en cas d'erreur, sinon une
-     * redirection vers la liste
+     *         redirection vers la liste
      */
     @PostMapping("/trade/validate")
-    public String validate(@Valid Trade trade, BindingResult result) {
+    public String validate(@Valid @ModelAttribute("trade") TradeDto trade,
+                           BindingResult result) {
         if (result.hasErrors()) {
             return "trade/add";
         }
-        tradeService.save(trade);
+        tradeService.create(trade);
         return "redirect:/trade/list";
     }
 
@@ -74,29 +78,30 @@ public class TradeController {
      */
     @GetMapping("/trade/update/{id}")
     public String showUpdateForm(@PathVariable("id") Integer id, Model model) {
-        Trade trade = tradeService.findById(id);
-        model.addAttribute("trade", trade);
+        model.addAttribute("trade", tradeService.findById(id));
         return "trade/update";
     }
 
     /**
      * Valide et enregistre les modifications apportées à un Trade
-     * existant. En cas d'erreur de validation, réaffiche le formulaire.
+     * existant. L'identifiant utilisé est toujours celui de l'URL. En cas
+     * d'erreur de validation, réaffiche le formulaire.
      *
      * @param id     l'identifiant du Trade à mettre à jour
-     * @param trade  le Trade soumis, validé par les contraintes de l'entité
+     * @param trade  le DTO soumis, validé par ses contraintes
      * @param result le résultat de la validation
      * @return le nom de la vue du formulaire en cas d'erreur, sinon une
-     * redirection vers la liste
+     *         redirection vers la liste
      */
     @PostMapping("/trade/update/{id}")
-    public String updateTrade(@PathVariable("id") Integer id, @Valid Trade trade,
+    public String updateTrade(@PathVariable("id") Integer id,
+                              @Valid @ModelAttribute("trade") TradeDto trade,
                               BindingResult result) {
         if (result.hasErrors()) {
+            trade.setTradeId(id);
             return "trade/update";
         }
-        trade.setTradeId(id);
-        tradeService.save(trade);
+        tradeService.update(id, trade);
         return "redirect:/trade/list";
     }
 
