@@ -1,8 +1,6 @@
 package com.nnk.springboot.domain;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -42,14 +40,13 @@ public class Rating {
      */
     private String fitchRating;
 
-    @NotNull(message = "OrderNumber is mandatory")
-    @Positive(message = "OrderNumber must be positive")
     private Integer orderNumber;
 
     /**
      * Construit un Rating avec ses champs essentiels, sans identifiant.
-     * Utilisé notamment par les tests unitaires pour créer des instances
-     * sans passer par tous les champs de l'entité.
+     * Utilisé par {@code RatingService} lors d'une création et par les
+     * tests unitaires pour créer des instances sans passer par tous les
+     * champs de l'entité.
      *
      * @param moodysRating la note attribuée par Moody's
      * @param sandPRating  la note attribuée par Standard &amp; Poor's

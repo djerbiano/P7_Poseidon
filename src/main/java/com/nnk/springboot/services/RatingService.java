@@ -1,6 +1,7 @@
 package com.nnk.springboot.services;
 
 import com.nnk.springboot.domain.Rating;
+import com.nnk.springboot.dto.RatingDto;
 import com.nnk.springboot.exceptions.ResourceNotFoundException;
 import com.nnk.springboot.repositories.RatingRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,8 +11,9 @@ import java.util.List;
 
 /**
  * Service métier gérant les opérations CRUD sur l'entité {@link Rating}.
- * Il porte également la règle métier exigeant qu'au moins une note d'agence
- * soit renseignée.
+ * Il reçoit les données des formulaires sous forme de {@link RatingDto}
+ * et porte également la règle métier exigeant qu'au moins une note
+ * d'agence soit renseignée.
  */
 @Service
 public class RatingService {
@@ -43,13 +45,13 @@ public class RatingService {
      * Vérifie qu'au moins une des trois notes d'agence (Moody's, S&amp;P, Fitch)
      * est renseignée, c'est-à-dire non nulle et non vide.
      *
-     * @param rating le Rating à contrôler
+     * @param dto les données du formulaire à contrôler
      * @return true si au moins une note est renseignée, false si les trois sont vides ou nulles
      */
-    public boolean hasAnyRating(Rating rating) {
-        return !isBlank(rating.getMoodysRating())
-                || !isBlank(rating.getSandPRating())
-                || !isBlank(rating.getFitchRating());
+    public boolean hasAnyRating(RatingDto dto) {
+        return !isBlank(dto.getMoodysRating())
+                || !isBlank(dto.getSandPRating())
+                || !isBlank(dto.getFitchRating());
     }
 
     /**
@@ -63,15 +65,35 @@ public class RatingService {
     }
 
     /**
-     * Enregistre un Rating : création s'il n'a pas d'identifiant,
-     * mise à jour sinon. La règle {@link #hasAnyRating(Rating)} doit être
-     * vérifiée par l'appelant avant l'enregistrement.
+     * Crée un nouveau Rating à partir des champs saisis dans le formulaire.
+     * La règle {@link #hasAnyRating(RatingDto)} doit être vérifiée par
+     * l'appelant avant la création. L'identifiant éventuellement présent
+     * dans le DTO est ignoré : il est généré par la base de données.
      *
-     * @param rating le Rating à enregistrer
-     * @return le Rating enregistré, avec son identifiant généré le cas échéant
+     * @param dto les données soumises depuis le formulaire d'ajout
      */
-    public Rating save(Rating rating) {
-        return ratingRepository.save(rating);
+    public void create(RatingDto dto) {
+        Rating rating = new Rating(dto.getMoodysRating(), dto.getSandPRating(),
+                dto.getFitchRating(), dto.getOrderNumber());
+        ratingRepository.save(rating);
+    }
+
+    /**
+     * Met à jour un Rating existant avec les champs saisis dans le
+     * formulaire. La règle {@link #hasAnyRating(RatingDto)} doit être
+     * vérifiée par l'appelant avant la mise à jour.
+     *
+     * @param id  l'identifiant du Rating à modifier
+     * @param dto les nouvelles valeurs saisies dans le formulaire de modification
+     * @throws ResourceNotFoundException si aucun Rating n'existe pour cet identifiant
+     */
+    public void update(Integer id, RatingDto dto) {
+        Rating rating = findById(id);
+        rating.setMoodysRating(dto.getMoodysRating());
+        rating.setSandPRating(dto.getSandPRating());
+        rating.setFitchRating(dto.getFitchRating());
+        rating.setOrderNumber(dto.getOrderNumber());
+        ratingRepository.save(rating);
     }
 
     /**

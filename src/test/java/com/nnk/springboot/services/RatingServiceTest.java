@@ -1,6 +1,7 @@
 package com.nnk.springboot.services;
 
 import com.nnk.springboot.domain.Rating;
+import com.nnk.springboot.dto.RatingDto;
 import com.nnk.springboot.exceptions.ResourceNotFoundException;
 import com.nnk.springboot.repositories.RatingRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,11 +32,26 @@ public class RatingServiceTest {
     private RatingService ratingService;
 
     private Rating rating;
+    private RatingDto dto;
 
     @BeforeEach
     void setUp() {
         rating = new Rating("AAA", "AA+", "AA", 1);
         rating.setId(1);
+
+        dto = buildDto("BBB", "BB+", "BB", 2);
+    }
+
+    /**
+     * Construit un RatingDto avec les valeurs fournies.
+     */
+    private RatingDto buildDto(String moodys, String sandP, String fitch, Integer orderNumber) {
+        RatingDto ratingDto = new RatingDto();
+        ratingDto.setMoodysRating(moodys);
+        ratingDto.setSandPRating(sandP);
+        ratingDto.setFitchRating(fitch);
+        ratingDto.setOrderNumber(orderNumber);
+        return ratingDto;
     }
 
     /**
@@ -79,9 +95,7 @@ public class RatingServiceTest {
      */
     @Test
     void hasAnyRating_shouldReturnTrue_whenAtLeastOneFieldIsFilled() {
-        Rating r = new Rating("AAA", null, null, 1);
-
-        assertTrue(ratingService.hasAnyRating(r));
+        assertTrue(ratingService.hasAnyRating(buildDto("AAA", null, null, 1)));
     }
 
     /**
@@ -89,9 +103,7 @@ public class RatingServiceTest {
      */
     @Test
     void hasAnyRating_shouldReturnTrue_whenOnlySandPRatingIsFilled() {
-        Rating r = new Rating(null, "AA+", null, 1);
-
-        assertTrue(ratingService.hasAnyRating(r));
+        assertTrue(ratingService.hasAnyRating(buildDto(null, "AA+", null, 1)));
     }
 
     /**
@@ -99,32 +111,66 @@ public class RatingServiceTest {
      */
     @Test
     void hasAnyRating_shouldReturnTrue_whenOnlyFitchRatingIsFilled() {
-        Rating r = new Rating(null, null, "AA", 1);
-
-        assertTrue(ratingService.hasAnyRating(r));
+        assertTrue(ratingService.hasAnyRating(buildDto(null, null, "AA", 1)));
     }
-    
+
     /**
      * Vérifie que hasAnyRating() retourne false si les trois agences sont vides ou blanches.
      */
     @Test
     void hasAnyRating_shouldReturnFalse_whenAllFieldsAreEmpty() {
-        Rating r = new Rating("", null, "   ", 1);
-
-        assertFalse(ratingService.hasAnyRating(r));
+        assertFalse(ratingService.hasAnyRating(buildDto("", null, " ", 1)));
     }
 
     /**
-     * Vérifie que save() délègue bien au repository et retourne l'objet sauvegardé.
+     * Vérifie que create() enregistre un nouveau Rating contenant les champs
+     * du formulaire, en ignorant tout identifiant fourni par l'utilisateur.
      */
     @Test
-    void save_shouldCallRepositoryAndReturnSavedRating() {
-        when(ratingRepository.save(any(Rating.class))).thenReturn(rating);
+    void create_shouldSaveNewEntity_andIgnoreIdFromDto() {
+        dto.setId(42);
 
-        Rating result = ratingService.save(rating);
+        ratingService.create(dto);
 
-        assertNotNull(result);
+        verify(ratingRepository, times(1)).save(
+                argThat((Rating saved) ->
+                        saved.getId() == null
+                                && "BBB".equals(saved.getMoodysRating())
+                                && "BB+".equals(saved.getSandPRating())
+                                && "BB".equals(saved.getFitchRating())
+                                && saved.getOrderNumber().equals(2)
+                )
+        );
+    }
+
+    /**
+     * Vérifie que update() modifie les champs du formulaire sur l'entité
+     * existante, en conservant son identifiant.
+     */
+    @Test
+    void update_shouldOverwriteFormFields_andKeepId() {
+        when(ratingRepository.findById(1)).thenReturn(Optional.of(rating));
+
+        ratingService.update(1, dto);
+
         verify(ratingRepository, times(1)).save(rating);
+        assertEquals(1, rating.getId());
+        assertEquals("BBB", rating.getMoodysRating());
+        assertEquals("BB+", rating.getSandPRating());
+        assertEquals("BB", rating.getFitchRating());
+        assertEquals(2, rating.getOrderNumber());
+    }
+
+    /**
+     * Vérifie que update() lève ResourceNotFoundException si l'id n'existe pas,
+     * sans jamais appeler save().
+     */
+    @Test
+    void update_shouldThrowException_whenIdDoesNotExist() {
+        when(ratingRepository.findById(99)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> ratingService.update(99, dto));
+        verify(ratingRepository, never()).save(any());
     }
 
     /**

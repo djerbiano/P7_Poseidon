@@ -1,12 +1,13 @@
 package com.nnk.springboot.controllers;
 
-import com.nnk.springboot.domain.Rating;
+import com.nnk.springboot.dto.RatingDto;
 import com.nnk.springboot.services.RatingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,12 +16,14 @@ import jakarta.validation.Valid;
 
 /**
  * Contrôleur MVC gérant les pages CRUD des Rating (liste, ajout,
- * modification, suppression). Délègue toute la logique métier à
- * {@link RatingService}, y compris la règle exigeant qu'au moins une
- * note d'agence soit renseignée.
+ * modification, suppression). Les données soumises par les formulaires
+ * sont reçues sous forme de {@link RatingDto}. Délègue toute la logique
+ * métier à {@link RatingService}, y compris la règle exigeant qu'au moins
+ * une note d'agence soit renseignée.
  */
 @Controller
 public class RatingController {
+
     @Autowired
     private RatingService ratingService;
 
@@ -39,11 +42,12 @@ public class RatingController {
     /**
      * Affiche le formulaire d'ajout d'un nouveau Rating.
      *
-     * @param rating un Rating vide lié au formulaire
+     * @param model le modèle Spring MVC, alimenté avec un DTO vide
      * @return le nom de la vue du formulaire d'ajout
      */
     @GetMapping("/rating/add")
-    public String addRatingForm(Rating rating) {
+    public String addRatingForm(Model model) {
+        model.addAttribute("rating", new RatingDto());
         return "rating/add";
     }
 
@@ -52,13 +56,14 @@ public class RatingController {
      * d'ajout. En cas d'erreur de validation, ou si aucune note d'agence
      * n'est renseignée, réaffiche le formulaire.
      *
-     * @param rating le Rating soumis, validé par les contraintes de l'entité
+     * @param rating le DTO soumis, validé par ses contraintes
      * @param result le résultat de la validation
      * @return le nom de la vue du formulaire en cas d'erreur, sinon une
-     * redirection vers la liste
+     *         redirection vers la liste
      */
     @PostMapping("/rating/validate")
-    public String validate(@Valid Rating rating, BindingResult result) {
+    public String validate(@Valid @ModelAttribute("rating") RatingDto rating,
+                           BindingResult result) {
         if (result.hasErrors()) {
             return "rating/add";
         }
@@ -66,7 +71,7 @@ public class RatingController {
             result.reject("rating.empty", "At least one rating agency (Moody's, sandP, Fitch) must be provided");
             return "rating/add";
         }
-        ratingService.save(rating);
+        ratingService.create(rating);
         return "redirect:/rating/list";
     }
 
@@ -79,34 +84,36 @@ public class RatingController {
      */
     @GetMapping("/rating/update/{id}")
     public String showUpdateForm(@PathVariable("id") Integer id, Model model) {
-        Rating rating = ratingService.findById(id);
-        model.addAttribute("rating", rating);
+        model.addAttribute("rating", ratingService.findById(id));
         return "rating/update";
     }
 
     /**
      * Valide et enregistre les modifications apportées à un Rating
-     * existant. En cas d'erreur de validation, ou si aucune note d'agence
-     * n'est renseignée, réaffiche le formulaire.
+     * existant. L'identifiant utilisé est toujours celui de l'URL. En cas
+     * d'erreur de validation, ou si aucune note d'agence n'est renseignée,
+     * réaffiche le formulaire.
      *
      * @param id     l'identifiant du Rating à mettre à jour
-     * @param rating le Rating soumis, validé par les contraintes de l'entité
+     * @param rating le DTO soumis, validé par ses contraintes
      * @param result le résultat de la validation
      * @return le nom de la vue du formulaire en cas d'erreur, sinon une
-     * redirection vers la liste
+     *         redirection vers la liste
      */
     @PostMapping("/rating/update/{id}")
-    public String updateRating(@PathVariable("id") Integer id, @Valid Rating rating,
+    public String updateRating(@PathVariable("id") Integer id,
+                               @Valid @ModelAttribute("rating") RatingDto rating,
                                BindingResult result) {
         if (result.hasErrors()) {
+            rating.setId(id);
             return "rating/update";
         }
         if (!ratingService.hasAnyRating(rating)) {
             result.reject("rating.empty", "At least one rating agency (Moody's, sandP, Fitch) must be provided");
+            rating.setId(id);
             return "rating/update";
         }
-        rating.setId(id);
-        ratingService.save(rating);
+        ratingService.update(id, rating);
         return "redirect:/rating/list";
     }
 
