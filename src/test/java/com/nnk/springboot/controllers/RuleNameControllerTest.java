@@ -1,6 +1,7 @@
 package com.nnk.springboot.controllers;
 
 import com.nnk.springboot.domain.RuleName;
+import com.nnk.springboot.dto.RuleNameDto;
 import com.nnk.springboot.security.CustomUserDetailsService;
 import com.nnk.springboot.services.RuleNameService;
 import org.junit.jupiter.api.Test;
@@ -12,6 +13,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
+import static org.hamcrest.Matchers.hasProperty;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -20,7 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * Tests unitaires pour {@link RuleNameController}.
  * Utilise @WebMvcTest pour tester la couche HTTP (routes, statuts, redirections)
- * en isolant le controller du reste de l'application, avec RuleNameService simule.
+ * en isolant le controller du reste de l'application, avec RuleNameService simulé.
  */
 @WebMvcTest(RuleNameController.class)
 public class RuleNameControllerTest {
@@ -35,7 +38,7 @@ public class RuleNameControllerTest {
     private CustomUserDetailsService customUserDetailsService;
 
     /**
-     * Vérifie que la liste des RuleName s'affiche correctement pour un utilisateur connecte.
+     * Vérifie que la liste des RuleName s'affiche correctement pour un utilisateur connecté.
      */
     @Test
     @WithMockUser
@@ -45,22 +48,24 @@ public class RuleNameControllerTest {
 
         mockMvc.perform(get("/ruleName/list"))
                 .andExpect(status().isOk())
-                .andExpect(view().name("ruleName/list"));
+                .andExpect(view().name("ruleName/list"))
+                .andExpect(model().attributeExists("ruleNames"));
     }
 
     /**
-     * Vérifie que le formulaire d'ajout s'affiche correctement.
+     * Vérifie que le formulaire d'ajout s'affiche avec un DTO vide.
      */
     @Test
     @WithMockUser
     void addForm_shouldReturnAddView() throws Exception {
         mockMvc.perform(get("/ruleName/add"))
                 .andExpect(status().isOk())
-                .andExpect(view().name("ruleName/add"));
+                .andExpect(view().name("ruleName/add"))
+                .andExpect(model().attributeExists("ruleName"));
     }
 
     /**
-     * Vérifie qu'une soumission valide redirige vers la liste et appelle save().
+     * Vérifie qu'une soumission valide redirige vers la liste et appelle create().
      */
     @Test
     @WithMockUser
@@ -76,11 +81,11 @@ public class RuleNameControllerTest {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/ruleName/list"));
 
-        verify(ruleNameService, times(1)).save(any(RuleName.class));
+        verify(ruleNameService, times(1)).create(any(RuleNameDto.class));
     }
 
     /**
-     * Vérifie qu'une soumission invalide (name manquant) affiche le formulaire.
+     * Vérifie qu'une soumission invalide (champs obligatoires manquants) affiche le formulaire.
      */
     @Test
     @WithMockUser
@@ -91,11 +96,11 @@ public class RuleNameControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("ruleName/add"));
 
-        verify(ruleNameService, never()).save(any(RuleName.class));
+        verify(ruleNameService, never()).create(any(RuleNameDto.class));
     }
 
     /**
-     * Vérifie que le formulaire de modification s'affiche avec les donnees existantes.
+     * Vérifie que le formulaire de modification s'affiche avec les données existantes.
      */
     @Test
     @WithMockUser
@@ -106,11 +111,13 @@ public class RuleNameControllerTest {
 
         mockMvc.perform(get("/ruleName/update/1"))
                 .andExpect(status().isOk())
-                .andExpect(view().name("ruleName/update"));
+                .andExpect(view().name("ruleName/update"))
+                .andExpect(model().attribute("ruleName", hasProperty("id", is(1))));
     }
 
     /**
-     * Vérifie qu'une soumission de mise à jour valide redirige vers la liste.
+     * Vérifie qu'une soumission de mise à jour valide appelle update() avec
+     * l'identifiant de l'URL, puis redirige vers la liste.
      */
     @Test
     @WithMockUser
@@ -126,11 +133,12 @@ public class RuleNameControllerTest {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/ruleName/list"));
 
-        verify(ruleNameService, times(1)).save(any(RuleName.class));
+        verify(ruleNameService, times(1)).update(eq(1), any(RuleNameDto.class));
     }
 
     /**
-     * Vérifie qu'une soumission de mise à jour invalide (name manquant) affiche le formulaire.
+     * Vérifie qu'une soumission de mise à jour invalide réaffiche le formulaire
+     * avec l'identifiant de l'URL remis dans le DTO, sans appeler update().
      */
     @Test
     @WithMockUser
@@ -139,9 +147,10 @@ public class RuleNameControllerTest {
                         .with(csrf())
                         .param("description", "Description"))
                 .andExpect(status().isOk())
-                .andExpect(view().name("ruleName/update"));
+                .andExpect(view().name("ruleName/update"))
+                .andExpect(model().attribute("ruleName", hasProperty("id", is(1))));
 
-        verify(ruleNameService, never()).save(any(RuleName.class));
+        verify(ruleNameService, never()).update(anyInt(), any(RuleNameDto.class));
     }
 
     /**

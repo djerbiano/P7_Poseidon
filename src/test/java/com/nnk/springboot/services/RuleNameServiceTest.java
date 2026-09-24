@@ -1,6 +1,7 @@
 package com.nnk.springboot.services;
 
 import com.nnk.springboot.domain.RuleName;
+import com.nnk.springboot.dto.RuleNameDto;
 import com.nnk.springboot.exceptions.ResourceNotFoundException;
 import com.nnk.springboot.repositories.RuleNameRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,11 +32,20 @@ public class RuleNameServiceTest {
     private RuleNameService ruleNameService;
 
     private RuleName ruleName;
+    private RuleNameDto dto;
 
     @BeforeEach
     void setUp() {
         ruleName = new RuleName("Rule Name", "Description", "Json", "Template", "SQL", "SQL Part");
         ruleName.setId(1);
+
+        dto = new RuleNameDto();
+        dto.setName("New Name");
+        dto.setDescription("New Description");
+        dto.setJson("New Json");
+        dto.setTemplate("New Template");
+        dto.setSqlStr("New SQL");
+        dto.setSqlPart("New SQL Part");
     }
 
     /**
@@ -75,16 +85,58 @@ public class RuleNameServiceTest {
     }
 
     /**
-     * Vérifie que save() délègue bien au repository et retourne l'objet sauvegardé.
+     * Vérifie que create() enregistre un nouveau RuleName contenant les champs
+     * du formulaire, en ignorant tout identifiant fourni par l'utilisateur.
      */
     @Test
-    void save_shouldCallRepositoryAndReturnSavedRuleName() {
-        when(ruleNameRepository.save(any(RuleName.class))).thenReturn(ruleName);
+    void create_shouldSaveNewEntity_andIgnoreIdFromDto() {
+        dto.setId(42);
 
-        RuleName result = ruleNameService.save(ruleName);
+        ruleNameService.create(dto);
 
-        assertNotNull(result);
+        verify(ruleNameRepository, times(1)).save(
+                argThat((RuleName saved) ->
+                        saved.getId() == null
+                                && "New Name".equals(saved.getName())
+                                && "New Description".equals(saved.getDescription())
+                                && "New Json".equals(saved.getJson())
+                                && "New Template".equals(saved.getTemplate())
+                                && "New SQL".equals(saved.getSqlStr())
+                                && "New SQL Part".equals(saved.getSqlPart())
+                )
+        );
+    }
+
+    /**
+     * Vérifie que update() modifie les champs du formulaire sur l'entité
+     * existante, en conservant son identifiant.
+     */
+    @Test
+    void update_shouldOverwriteFormFields_andKeepId() {
+        when(ruleNameRepository.findById(1)).thenReturn(Optional.of(ruleName));
+
+        ruleNameService.update(1, dto);
+
         verify(ruleNameRepository, times(1)).save(ruleName);
+        assertEquals(1, ruleName.getId());
+        assertEquals("New Name", ruleName.getName());
+        assertEquals("New Description", ruleName.getDescription());
+        assertEquals("New Json", ruleName.getJson());
+        assertEquals("New Template", ruleName.getTemplate());
+        assertEquals("New SQL", ruleName.getSqlStr());
+        assertEquals("New SQL Part", ruleName.getSqlPart());
+    }
+
+    /**
+     * Vérifie que update() lève ResourceNotFoundException si l'id n'existe pas,
+     * sans jamais appeler save().
+     */
+    @Test
+    void update_shouldThrowException_whenIdDoesNotExist() {
+        when(ruleNameRepository.findById(99)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> ruleNameService.update(99, dto));
+        verify(ruleNameRepository, never()).save(any());
     }
 
     /**

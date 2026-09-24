@@ -1,12 +1,13 @@
 package com.nnk.springboot.controllers;
 
-import com.nnk.springboot.domain.RuleName;
+import com.nnk.springboot.dto.RuleNameDto;
 import com.nnk.springboot.services.RuleNameService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,8 +16,9 @@ import jakarta.validation.Valid;
 
 /**
  * Contrôleur MVC gérant les pages CRUD des RuleName (liste, ajout,
- * modification, suppression). Délègue toute la logique métier à
- * {@link RuleNameService}.
+ * modification, suppression). Les données soumises par les formulaires
+ * sont reçues sous forme de {@link RuleNameDto}. Délègue toute la logique
+ * métier à {@link RuleNameService}.
  */
 @Controller
 public class RuleNameController {
@@ -39,11 +41,12 @@ public class RuleNameController {
     /**
      * Affiche le formulaire d'ajout d'un nouveau RuleName.
      *
-     * @param bid un RuleName vide lié au formulaire
+     * @param model le modèle Spring MVC, alimenté avec un DTO vide
      * @return le nom de la vue du formulaire d'ajout
      */
     @GetMapping("/ruleName/add")
-    public String addRuleForm(RuleName bid) {
+    public String addRuleNameForm(Model model) {
+        model.addAttribute("ruleName", new RuleNameDto());
         return "ruleName/add";
     }
 
@@ -51,17 +54,18 @@ public class RuleNameController {
      * Valide et enregistre un nouveau RuleName soumis depuis le formulaire
      * d'ajout. En cas d'erreur de validation, réaffiche le formulaire.
      *
-     * @param ruleName le RuleName soumis, validé par les contraintes de l'entité
+     * @param ruleName le DTO soumis, validé par ses contraintes
      * @param result   le résultat de la validation
      * @return le nom de la vue du formulaire en cas d'erreur, sinon une
      *         redirection vers la liste
      */
     @PostMapping("/ruleName/validate")
-    public String validate(@Valid RuleName ruleName, BindingResult result) {
+    public String validate(@Valid @ModelAttribute("ruleName") RuleNameDto ruleName,
+                           BindingResult result) {
         if (result.hasErrors()) {
             return "ruleName/add";
         }
-        ruleNameService.save(ruleName);
+        ruleNameService.create(ruleName);
         return "redirect:/ruleName/list";
     }
 
@@ -74,29 +78,30 @@ public class RuleNameController {
      */
     @GetMapping("/ruleName/update/{id}")
     public String showUpdateForm(@PathVariable("id") Integer id, Model model) {
-        RuleName ruleName = ruleNameService.findById(id);
-        model.addAttribute("ruleName", ruleName);
+        model.addAttribute("ruleName", ruleNameService.findById(id));
         return "ruleName/update";
     }
 
     /**
      * Valide et enregistre les modifications apportées à un RuleName
-     * existant. En cas d'erreur de validation, réaffiche le formulaire.
+     * existant. L'identifiant utilisé est toujours celui de l'URL. En cas
+     * d'erreur de validation, réaffiche le formulaire.
      *
      * @param id       l'identifiant du RuleName à mettre à jour
-     * @param ruleName le RuleName soumis, validé par les contraintes de l'entité
+     * @param ruleName le DTO soumis, validé par ses contraintes
      * @param result   le résultat de la validation
      * @return le nom de la vue du formulaire en cas d'erreur, sinon une
      *         redirection vers la liste
      */
     @PostMapping("/ruleName/update/{id}")
-    public String updateRuleName(@PathVariable("id") Integer id, @Valid RuleName ruleName,
+    public String updateRuleName(@PathVariable("id") Integer id,
+                                 @Valid @ModelAttribute("ruleName") RuleNameDto ruleName,
                                  BindingResult result) {
         if (result.hasErrors()) {
+            ruleName.setId(id);
             return "ruleName/update";
         }
-        ruleName.setId(id);
-        ruleNameService.save(ruleName);
+        ruleNameService.update(id, ruleName);
         return "redirect:/ruleName/list";
     }
 

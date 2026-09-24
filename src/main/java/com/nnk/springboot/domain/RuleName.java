@@ -1,7 +1,6 @@
 package com.nnk.springboot.domain;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -16,31 +15,22 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class RuleName {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @NotBlank(message = "Name is mandatory")
     private String name;
-
-    @NotBlank(message = "Description is mandatory")
     private String description;
-
-    @NotBlank(message = "Json is mandatory")
     private String json;
-
-    @NotBlank(message = "Template is mandatory")
     private String template;
-
-    @NotBlank(message = "SqlStr is mandatory")
     private String sqlStr;
-
-    @NotBlank(message = "SqlPart is mandatory")
     private String sqlPart;
 
     /**
      * Construit un RuleName avec l'ensemble de ses champs métier, sans
-     * identifiant.
+     * identifiant. Utilisé par {@code RuleNameService} lors d'une création
+     * et par les tests unitaires.
      *
      * @param name        le nom de la règle
      * @param description la description de la règle
