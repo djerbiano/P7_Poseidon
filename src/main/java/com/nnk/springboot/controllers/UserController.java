@@ -1,12 +1,13 @@
 package com.nnk.springboot.controllers;
 
-import com.nnk.springboot.domain.User;
+import com.nnk.springboot.dto.UserDto;
 import com.nnk.springboot.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,12 +16,16 @@ import jakarta.validation.Valid;
 
 /**
  * Contrôleur MVC gérant les pages CRUD des User (liste, ajout,
- * modification, suppression). Délègue toute la logique métier à
- * {@link UserService}, y compris le hachage et la validation de robustesse
- * des mots de passe.
+ * modification, suppression). Les données soumises par les formulaires
+ * sont reçues sous forme de {@link UserDto}. Délègue toute la logique
+ * métier à {@link UserService}, y compris le hachage et la validation de
+ * robustesse des mots de passe.
  */
 @Controller
 public class UserController {
+
+    private static final String WEAK_PASSWORD_MESSAGE =
+            "Password must contain at least 8 characters, one uppercase letter, one digit and one symbol";
 
     @Autowired
     private UserService userService;
@@ -40,11 +45,12 @@ public class UserController {
     /**
      * Affiche le formulaire d'ajout d'un nouvel User.
      *
-     * @param bid un User vide lié au formulaire
+     * @param model le modèle Spring MVC, alimenté avec un DTO vide
      * @return le nom de la vue du formulaire d'ajout
      */
     @GetMapping("/user/add")
-    public String addUser(User bid) {
+    public String addUserForm(Model model) {
+        model.addAttribute("user", new UserDto());
         return "user/add";
     }
 
@@ -53,13 +59,14 @@ public class UserController {
      * En cas d'erreur de validation, de mot de passe manquant, ou de mot de
      * passe ne respectant pas les règles de robustesse, réaffiche le formulaire.
      *
-     * @param user   l'User soumis, validé par les contraintes de l'entité
+     * @param user   le DTO soumis, validé par ses contraintes
      * @param result le résultat de la validation
      * @return le nom de la vue du formulaire en cas d'erreur, sinon une
-     * redirection vers la liste
+     *         redirection vers la liste
      */
     @PostMapping("/user/validate")
-    public String validate(@Valid User user, BindingResult result) {
+    public String validate(@Valid @ModelAttribute("user") UserDto user,
+                           BindingResult result) {
         if (result.hasErrors()) {
             return "user/add";
         }
@@ -68,56 +75,54 @@ public class UserController {
             return "user/add";
         }
         if (!userService.isPasswordValid(user.getPassword())) {
-            result.rejectValue("password", "error.user",
-                    "Password must contain at least 8 characters, one uppercase letter, one digit and one symbol");
+            result.rejectValue("password", "error.user", WEAK_PASSWORD_MESSAGE);
             return "user/add";
         }
-        userService.createUser(user);
+        userService.create(user);
         return "redirect:/user/list";
     }
 
     /**
-     * Affiche le formulaire de modification d'un User existant. Le mot de
-     * passe haché n'est jamais renvoyé au formulaire : il est vidé pour
-     * éviter de l'exposer côté client.
+     * Affiche le formulaire de modification d'un User existant. Le DTO
+     * transmis à la vue ne contient jamais le mot de passe haché.
      *
      * @param id    l'identifiant de l'User à modifier
-     * @param model le modèle Spring MVC, alimenté avec l'User trouvé
+     * @param model le modèle Spring MVC, alimenté avec le DTO de l'User
      * @return le nom de la vue du formulaire de modification
      */
     @GetMapping("/user/update/{id}")
     public String showUpdateForm(@PathVariable("id") Integer id, Model model) {
-        User user = userService.findById(id);
-        user.setPassword("");
-        model.addAttribute("user", user);
+        model.addAttribute("user", userService.findByIdAsDto(id));
         return "user/update";
     }
 
     /**
      * Valide et enregistre les modifications apportées à un User existant.
-     * Si le mot de passe soumis est vide, l'ancien mot de passe est conservé
-     * (voir {@link UserService#updateUser(Integer, User)}) ; s'il est renseigné,
-     * sa robustesse est vérifiée avant l'enregistrement.
+     * L'identifiant utilisé est toujours celui de l'URL. Si le mot de passe
+     * soumis est vide, l'ancien mot de passe est conservé ; s'il est
+     * renseigné, sa robustesse est vérifiée avant l'enregistrement.
      *
      * @param id     l'identifiant de l'User à mettre à jour
-     * @param user   l'User soumis, validé par les contraintes de l'entité
+     * @param user   le DTO soumis, validé par ses contraintes
      * @param result le résultat de la validation
      * @return le nom de la vue du formulaire en cas d'erreur, sinon une
-     * redirection vers la liste
+     *         redirection vers la liste
      */
     @PostMapping("/user/update/{id}")
-    public String updateUser(@PathVariable("id") Integer id, @Valid User user,
+    public String updateUser(@PathVariable("id") Integer id,
+                             @Valid @ModelAttribute("user") UserDto user,
                              BindingResult result) {
         if (result.hasErrors()) {
+            user.setId(id);
             return "user/update";
         }
         if (user.getPassword() != null && !user.getPassword().isBlank()
                 && !userService.isPasswordValid(user.getPassword())) {
-            result.rejectValue("password", "error.user",
-                    "Password must contain at least 8 characters, one uppercase letter, one digit and one symbol");
+            result.rejectValue("password", "error.user", WEAK_PASSWORD_MESSAGE);
+            user.setId(id);
             return "user/update";
         }
-        userService.updateUser(id, user);
+        userService.update(id, user);
         return "redirect:/user/list";
     }
 

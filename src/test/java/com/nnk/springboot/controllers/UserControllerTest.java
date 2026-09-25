@@ -1,6 +1,7 @@
 package com.nnk.springboot.controllers;
 
 import com.nnk.springboot.domain.User;
+import com.nnk.springboot.dto.UserDto;
 import com.nnk.springboot.security.CustomUserDetailsService;
 import com.nnk.springboot.services.UserService;
 import org.junit.jupiter.api.Test;
@@ -12,6 +13,9 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
+import static org.hamcrest.Matchers.hasProperty;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -20,7 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * Tests unitaires pour {@link UserController}.
  * Utilise @WebMvcTest pour tester la couche HTTP (routes, statuts, redirections)
- * en isolant le controller du reste de l'application, avec UserService simule.
+ * en isolant le controller du reste de l'application, avec UserService simulé.
  */
 @WebMvcTest(UserController.class)
 public class UserControllerTest {
@@ -35,7 +39,7 @@ public class UserControllerTest {
     private CustomUserDetailsService customUserDetailsService;
 
     /**
-     * Vérifie que la liste des User s'affiche correctement pour un utilisateur connecte.
+     * Vérifie que la liste des User s'affiche correctement pour un utilisateur connecté.
      */
     @Test
     @WithMockUser
@@ -49,22 +53,25 @@ public class UserControllerTest {
 
         mockMvc.perform(get("/user/list"))
                 .andExpect(status().isOk())
-                .andExpect(view().name("user/list"));
+                .andExpect(view().name("user/list"))
+                .andExpect(model().attributeExists("users"));
     }
 
     /**
-     * Vérifie que le formulaire d'ajout s'affiche correctement.
+     * Vérifie que le formulaire d'ajout s'affiche avec un DTO vide.
      */
     @Test
     @WithMockUser
     void addForm_shouldReturnAddView() throws Exception {
         mockMvc.perform(get("/user/add"))
                 .andExpect(status().isOk())
-                .andExpect(view().name("user/add"));
+                .andExpect(view().name("user/add"))
+                .andExpect(model().attributeExists("user"));
     }
 
     /**
-     * Vérifie qu'une soumission valide (mot de passe fort) redirige vers la liste.
+     * Vérifie qu'une soumission valide (mot de passe fort) redirige vers la liste
+     * et appelle create().
      */
     @Test
     @WithMockUser
@@ -80,11 +87,11 @@ public class UserControllerTest {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/user/list"));
 
-        verify(userService, times(1)).createUser(any(User.class));
+        verify(userService, times(1)).create(any(UserDto.class));
     }
 
     /**
-     * Vérifie qu'une soumission avec un mot de passe trop faible reaffiche le formulaire.
+     * Vérifie qu'une soumission avec un mot de passe trop faible réaffiche le formulaire.
      */
     @Test
     @WithMockUser
@@ -100,11 +107,11 @@ public class UserControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("user/add"));
 
-        verify(userService, never()).createUser(any(User.class));
+        verify(userService, never()).create(any(UserDto.class));
     }
 
     /**
-     * Vérifie qu'une soumission avec un mot de passe vide reaffiche le formulaire
+     * Vérifie qu'une soumission avec un mot de passe vide réaffiche le formulaire.
      */
     @Test
     @WithMockUser
@@ -118,11 +125,11 @@ public class UserControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("user/add"));
 
-        verify(userService, never()).createUser(any(User.class));
+        verify(userService, never()).create(any(UserDto.class));
     }
 
     /**
-     * Vérifie qu'une soumission sans le champ password affiche le formulaire.
+     * Vérifie qu'une soumission sans le champ password réaffiche le formulaire.
      */
     @Test
     @WithMockUser
@@ -135,7 +142,7 @@ public class UserControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("user/add"));
 
-        verify(userService, never()).createUser(any(User.class));
+        verify(userService, never()).create(any(UserDto.class));
     }
 
     /**
@@ -150,29 +157,33 @@ public class UserControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("user/add"));
 
-        verify(userService, never()).createUser(any(User.class));
+        verify(userService, never()).create(any(UserDto.class));
     }
 
     /**
-     * Vérifie que le formulaire de modification s'affiche avec les donnees existantes.
+     * Vérifie que le formulaire de modification s'affiche avec les données
+     * existantes, sans aucun mot de passe.
      */
     @Test
     @WithMockUser
-    void showUpdateForm_shouldReturnUpdateView() throws Exception {
-        User user = new User();
-        user.setId(1);
-        user.setUsername("testuser");
-        user.setFullname("Test User");
-        user.setRole("USER");
-        when(userService.findById(1)).thenReturn(user);
+    void showUpdateForm_shouldReturnUpdateView_withoutPassword() throws Exception {
+        UserDto userDto = new UserDto();
+        userDto.setId(1);
+        userDto.setUsername("testuser");
+        userDto.setFullname("Test User");
+        userDto.setRole("USER");
+        when(userService.findByIdAsDto(1)).thenReturn(userDto);
 
         mockMvc.perform(get("/user/update/1"))
                 .andExpect(status().isOk())
-                .andExpect(view().name("user/update"));
+                .andExpect(view().name("user/update"))
+                .andExpect(model().attribute("user", hasProperty("id", is(1))))
+                .andExpect(model().attribute("user", hasProperty("password", nullValue())));
     }
 
     /**
-     * Vérifie qu'une soumission de mise à jour valide (mot de passe vide, non changé) redirige vers la liste.
+     * Vérifie qu'une soumission de mise à jour valide (mot de passe vide, non changé)
+     * appelle update() avec l'identifiant de l'URL et redirige vers la liste.
      */
     @Test
     @WithMockUser
@@ -186,12 +197,12 @@ public class UserControllerTest {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/user/list"));
 
-        verify(userService, times(1)).updateUser(eq(1), any(User.class));
+        verify(userService, times(1)).update(eq(1), any(UserDto.class));
     }
 
     /**
      * Vérifie qu'une soumission de mise à jour sans le champ password du tout
-     * conserve l'ancien mot de passe et redirige vers la liste.
+     * redirige vers la liste.
      */
     @Test
     @WithMockUser
@@ -204,12 +215,12 @@ public class UserControllerTest {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/user/list"));
 
-        verify(userService, times(1)).updateUser(eq(1), any(User.class));
+        verify(userService, times(1)).update(eq(1), any(UserDto.class));
     }
 
     /**
      * Vérifie qu'une soumission de mise à jour avec un nouveau mot de passe valide
-     * redirige vers la liste et appelle bien updateUser().
+     * redirige vers la liste et appelle bien update().
      */
     @Test
     @WithMockUser
@@ -225,12 +236,12 @@ public class UserControllerTest {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/user/list"));
 
-        verify(userService, times(1)).updateUser(eq(1), any(User.class));
+        verify(userService, times(1)).update(eq(1), any(UserDto.class));
     }
 
     /**
      * Vérifie qu'une soumission de mise à jour avec un nouveau mot de passe trop faible
-     * reaffiche le formulaire, sans jamais appeler updateUser().
+     * réaffiche le formulaire avec l'identifiant de l'URL, sans appeler update().
      */
     @Test
     @WithMockUser
@@ -244,13 +255,15 @@ public class UserControllerTest {
                         .param("fullname", "Test User Update")
                         .param("role", "USER"))
                 .andExpect(status().isOk())
-                .andExpect(view().name("user/update"));
+                .andExpect(view().name("user/update"))
+                .andExpect(model().attribute("user", hasProperty("id", is(1))));
 
-        verify(userService, never()).updateUser(anyInt(), any(User.class));
+        verify(userService, never()).update(anyInt(), any(UserDto.class));
     }
 
     /**
-     * Vérifie qu'une soumission de mise à jour invalide affiche le formulaire.
+     * Vérifie qu'une soumission de mise à jour invalide réaffiche le formulaire
+     * avec l'identifiant de l'URL, sans appeler update().
      */
     @Test
     @WithMockUser
@@ -259,9 +272,10 @@ public class UserControllerTest {
                         .with(csrf())
                         .param("password", ""))
                 .andExpect(status().isOk())
-                .andExpect(view().name("user/update"));
+                .andExpect(view().name("user/update"))
+                .andExpect(model().attribute("user", hasProperty("id", is(1))));
 
-        verify(userService, never()).updateUser(anyInt(), any(User.class));
+        verify(userService, never()).update(anyInt(), any(UserDto.class));
     }
 
     /**

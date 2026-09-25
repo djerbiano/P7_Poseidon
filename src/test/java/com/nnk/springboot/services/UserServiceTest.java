@@ -1,6 +1,7 @@
 package com.nnk.springboot.services;
 
 import com.nnk.springboot.domain.User;
+import com.nnk.springboot.dto.UserDto;
 import com.nnk.springboot.exceptions.ResourceNotFoundException;
 import com.nnk.springboot.repositories.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,11 +20,12 @@ import static org.mockito.Mockito.*;
 /**
  * Tests unitaires pour {@link UserService}.
  * Les dépendances (UserRepository) sont simulées avec Mockito
- * pour tester la logique du service de manière isolée, sans base de donnees réelle,
+ * pour tester la logique du service de manière isolée, sans base de données réelle,
  * y compris le hachage du mot de passe et la logique de mise à jour conditionnelle.
  */
 @ExtendWith(MockitoExtension.class)
 public class UserServiceTest {
+
     @Mock
     private UserRepository userRepository;
 
@@ -31,6 +33,7 @@ public class UserServiceTest {
     private UserService userService;
 
     private User user;
+    private UserDto dto;
 
     @BeforeEach
     void setUp() {
@@ -40,6 +43,11 @@ public class UserServiceTest {
         user.setPassword("OldHashedPassword123!");
         user.setFullname("Test User");
         user.setRole("USER");
+
+        dto = new UserDto();
+        dto.setUsername("newuser");
+        dto.setFullname("New User");
+        dto.setRole("ADMIN");
     }
 
     /**
@@ -79,6 +87,23 @@ public class UserServiceTest {
     }
 
     /**
+     * Vérifie que findByIdAsDto() copie les champs de l'utilisateur
+     * sans jamais copier le mot de passe haché.
+     */
+    @Test
+    void findByIdAsDto_shouldReturnDtoWithoutPassword() {
+        when(userRepository.findById(1)).thenReturn(Optional.of(user));
+
+        UserDto result = userService.findByIdAsDto(1);
+
+        assertEquals(1, result.getId());
+        assertEquals("testuser", result.getUsername());
+        assertEquals("Test User", result.getFullname());
+        assertEquals("USER", result.getRole());
+        assertNull(result.getPassword());
+    }
+
+    /**
      * Vérifie que isPasswordValid() accepte un mot de passe conforme.
      */
     @Test
@@ -95,92 +120,88 @@ public class UserServiceTest {
     }
 
     /**
-     * Vérifie que createUser() hash le mot de passe avant de sauvegarder.
+     * Vérifie que create() enregistre un nouvel utilisateur avec les champs
+     * du formulaire et un mot de passe haché, en ignorant tout identifiant
+     * fourni par l'utilisateur.
      */
     @Test
-    void createUser_shouldHashPasswordBeforeSaving() {
-        User candidate = new User();
-        candidate.setUsername("candidate");
-        candidate.setPassword("Plain@Pass1");
-        candidate.setFullname("Candidate User");
-        candidate.setRole("USER");
+    void create_shouldHashPasswordAndIgnoreIdFromDto() {
+        dto.setId(42);
+        dto.setPassword("Plain@Pass1");
 
-        userService.createUser(candidate);
+        userService.create(dto);
 
-        assertNotEquals("Plain@Pass1", candidate.getPassword());
-        verify(userRepository, times(1)).save(candidate);
+        verify(userRepository, times(1)).save(
+                argThat((User saved) ->
+                        saved.getId() == null
+                                && "newuser".equals(saved.getUsername())
+                                && "New User".equals(saved.getFullname())
+                                && "ADMIN".equals(saved.getRole())
+                                && saved.getPassword() != null
+                                && !"Plain@Pass1".equals(saved.getPassword())
+                )
+        );
     }
 
     /**
-     * Vérifie que updateUser() conserve l'ancien mot de passe hashe
-     * quand le nouveau mot de passe est vide (l'utilisateur ne veut pas le changer).
+     * Vérifie que update() modifie les champs du formulaire et conserve
+     * l'ancien mot de passe haché quand le nouveau mot de passe est vide.
      */
     @Test
-    void updateUser_shouldKeepOldPassword_whenNewPasswordIsBlank() {
+    void update_shouldKeepOldPassword_whenNewPasswordIsBlank() {
+        dto.setPassword("");
         when(userRepository.findById(1)).thenReturn(Optional.of(user));
 
-        User candidate = new User();
-        candidate.setUsername("testuser");
-        candidate.setPassword("");
-        candidate.setFullname("Test User Update");
-        candidate.setRole("USER");
+        userService.update(1, dto);
 
-        userService.updateUser(1, candidate);
-
-        assertEquals("OldHashedPassword123!", candidate.getPassword());
-        verify(userRepository, times(1)).save(candidate);
+        verify(userRepository, times(1)).save(user);
+        assertEquals(1, user.getId());
+        assertEquals("newuser", user.getUsername());
+        assertEquals("New User", user.getFullname());
+        assertEquals("ADMIN", user.getRole());
+        assertEquals("OldHashedPassword123!", user.getPassword());
     }
 
     /**
-     * Vérifie que updateUser() conserve l'ancien mot de passe hashé
+     * Vérifie que update() conserve l'ancien mot de passe haché
      * quand le nouveau mot de passe est null (pas transmis du tout).
      */
     @Test
-    void updateUser_shouldKeepOldPassword_whenNewPasswordIsNull() {
+    void update_shouldKeepOldPassword_whenNewPasswordIsNull() {
+        dto.setPassword(null);
         when(userRepository.findById(1)).thenReturn(Optional.of(user));
 
-        User candidate = new User();
-        candidate.setUsername("testuser");
-        candidate.setPassword(null);
-        candidate.setFullname("Test User Update");
-        candidate.setRole("USER");
+        userService.update(1, dto);
 
-        userService.updateUser(1, candidate);
-
-        assertEquals("OldHashedPassword123!", candidate.getPassword());
-        verify(userRepository, times(1)).save(candidate);
+        verify(userRepository, times(1)).save(user);
+        assertEquals("OldHashedPassword123!", user.getPassword());
     }
 
     /**
-     * Vérifie que updateUser() hash le nouveau mot de passe quand il est renseigné.
+     * Vérifie que update() hache le nouveau mot de passe quand il est renseigné.
      */
     @Test
-    void updateUser_shouldHashNewPassword_whenPasswordIsProvided() {
+    void update_shouldHashNewPassword_whenPasswordIsProvided() {
+        dto.setPassword("New@Pass123");
         when(userRepository.findById(1)).thenReturn(Optional.of(user));
 
-        User candidate = new User();
-        candidate.setUsername("testuser");
-        candidate.setPassword("New@Pass123");
-        candidate.setFullname("Test User Update");
-        candidate.setRole("USER");
+        userService.update(1, dto);
 
-        userService.updateUser(1, candidate);
-
-        assertNotEquals("New@Pass123", candidate.getPassword());
-        verify(userRepository, times(1)).save(candidate);
+        verify(userRepository, times(1)).save(user);
+        assertNotEquals("New@Pass123", user.getPassword());
+        assertNotEquals("OldHashedPassword123!", user.getPassword());
     }
 
     /**
-     * Vérifie que updateUser() lève ResourceNotFoundException si l'id n'existe pas.
+     * Vérifie que update() lève ResourceNotFoundException si l'id n'existe pas,
+     * sans jamais appeler save().
      */
     @Test
-    void updateUser_shouldThrowException_whenIdDoesNotExist() {
+    void update_shouldThrowException_whenIdDoesNotExist() {
         when(userRepository.findById(99)).thenReturn(Optional.empty());
 
-        User candidate = new User();
-        candidate.setPassword("");
-
-        assertThrows(ResourceNotFoundException.class, () -> userService.updateUser(99, candidate));
+        assertThrows(ResourceNotFoundException.class, () -> userService.update(99, dto));
+        verify(userRepository, never()).save(any());
     }
 
     /**
@@ -206,6 +227,4 @@ public class UserServiceTest {
         assertThrows(ResourceNotFoundException.class, () -> userService.deleteById(99));
         verify(userRepository, never()).delete(any(User.class));
     }
-
-
 }
