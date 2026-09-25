@@ -10,7 +10,7 @@
 [![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=flat-square&logo=mysql&logoColor=white)](https://www.mysql.com/)
 [![JUnit5](https://img.shields.io/badge/JUnit-5-25A162?style=flat-square&logo=junit5&logoColor=white)](https://junit.org/junit5/)
 
-[![Tests](https://img.shields.io/badge/tests-118%2F118%20passing-brightgreen?style=flat-square)](#-tests--qualité)
+[![Tests](https://img.shields.io/badge/tests-128%2F128%20passing-brightgreen?style=flat-square)](#-tests--qualité)
 [![Coverage](https://img.shields.io/badge/coverage-99%25-brightgreen?style=flat-square)](#-tests--qualité)
 [![Javadoc](https://img.shields.io/badge/javadoc-0%20warning-brightgreen?style=flat-square)](https://djerbiano.github.io/P7_Poseidon/)
 
@@ -22,7 +22,7 @@
 
 Poseidon est une application web MVC construite avec **Spring Boot** et **Thymeleaf** pour le compte fictif de Poseidon Capital Solutions. Elle centralise la gestion de six types de données financières (offres, courbes de taux, notations, règles de trading, transactions, utilisateurs) derrière une authentification sécurisée par session.
 
-L'accent a été mis sur une architecture propre et testée : séparation stricte Controller / Service / Repository, gestion d'erreurs centralisée, et une suite de tests couvrant la quasi-totalité du code.
+L'accent a été mis sur une architecture propre et testée : séparation stricte Controller / Service / Repository, DTO pour contrôler les données entrantes des formulaires, gestion d'erreurs centralisée, et une suite de tests couvrant la quasi-totalité du code.
 
 <br/>
 
@@ -30,10 +30,11 @@ L'accent a été mis sur une architecture propre et testée : séparation strict
 
 | | |
 |---|---|
-| 🏛️ **Architecture en couches** | Controller → Service → Repository, sans interfaces de service ni DTO — cohérent avec une app MVC Thymeleaf où les templates bindent directement sur les entités |
-| 🔐 **Sécurité** | Spring Security par session, mots de passe hachés avec BCrypt (facteur 14), règles de robustesse (8+ caractères, majuscule, chiffre, symbole) |
+| 🏛️ **Architecture en couches** | Controller → Service → Repository, classes de service directes (sans interfaces) |
+| 📦 **DTO pour les formulaires** | Les formulaires sont liés à des DTO qui n'exposent que les champs saisissables : protection contre le Mass Assignment, et la mise à jour ne modifie que les champs du formulaire |
+| 🔐 **Sécurité** | Spring Security par session, mots de passe hachés avec BCrypt (facteur 14), règles de robustesse (8+ caractères, majuscule, chiffre, symbole), hash jamais renvoyé au navigateur |
 | 🛡️ **Gestion d'erreurs centralisée** | `GlobalExceptionHandler`, pages 403/404 personnalisées |
-| 🧪 **118 tests unitaires** | Couches isolées avec Mockito et MockMvc, 99% de couverture d'instructions et 100% de couverture de branches (JaCoCo) |
+| 🧪 **128 tests unitaires** | Couches isolées avec Mockito et MockMvc, 99% de couverture d'instructions et 100% de couverture de branches (JaCoCo) |
 | 📝 **JavaDoc complète** | Documentation intégrale du code, 0 warning |
 
 <br/>
@@ -58,6 +59,7 @@ Chaque module expose les mêmes opérations CRUD (liste, ajout, modification, su
 ```
 src/main/java/com/nnk/springboot/
 ├── domain/          → entités JPA (Lombok)
+├── dto/              → objets des formulaires, avec leurs règles de validation
 ├── repositories/     → accès aux données (Spring Data JPA)
 ├── services/         → logique métier
 ├── controllers/       → pages MVC (Thymeleaf)
@@ -75,11 +77,20 @@ Requête HTTP → Controller → Service → Repository → MySQL
 
 <br/>
 
+- Les formulaires d'ajout et de modification sont liés à un DTO (`BidListDto`, `TradeDto`…) qui ne contient que les champs saisissables et porte les règles de validation.
+- Le service crée une nouvelle entité (`create`) ou charge l'entité existante et n'y recopie que les champs du formulaire (`update`) : les colonnes non exposées (trader, book, dates, statut…) ne peuvent ni être modifiées par une requête, ni être effacées à la mise à jour.
+- L'identifiant est toujours pris dans l'URL, jamais dans le corps de la requête.
+- Pour `User`, le formulaire de modification est lui aussi alimenté par un DTO, afin que le mot de passe haché ne soit jamais envoyé au navigateur.
+
+<br/>
+
 ## 🔐 Sécurité
 
 - Authentification par formulaire, session Spring Security
 - Mots de passe hachés avec `BCryptPasswordEncoder` (facteur de coût 14)
 - Validation de robustesse des mots de passe : 8 caractères minimum, une majuscule, un chiffre, un symbole
+- Mot de passe haché jamais renvoyé dans les formulaires ; laissé vide à la modification, l'ancien est conservé
+- Protection contre le Mass Assignment grâce aux DTO de formulaire
 - Message d'erreur générique en cas d'échec de connexion, pour éviter l'énumération de comptes
 - Pages d'erreur dédiées (403 accès refusé, 404 ressource introuvable)
 
@@ -89,9 +100,11 @@ Requête HTTP → Controller → Service → Repository → MySQL
 
 | Métrique | Résultat |
 |---|---|
-| Tests unitaires | **118 / 118** (100%) |
-| Couverture des instructions | **99%** |
-| Couverture des branches | **100%** |
+| Tests unitaires | **128 / 128** (100%) |
+| Couverture des instructions | **99%** (8 instructions non couvertes sur 1 283 : méthode `main()` et constructeur par défaut d'une classe utilitaire) |
+| Couverture des branches | **100%** (74 / 74) |
+
+> Le package `dto` n'apparaît pas dans le rapport JaCoCo : il ne contient que du code généré par Lombok (annoté `@lombok.Generated`), que JaCoCo exclut automatiquement. La validation et le binding des DTO sont testés à travers les tests MockMvc des contrôleurs.
 
 Chaque couche est testée isolément :
 
@@ -104,11 +117,6 @@ SecurityTest        → PasswordValidator, CustomUserDetailsService
 ```bash
 mvn clean verify
 ```
-
-Génère les rapports :
-- `target/reports/apidocs/index.html` — JavaDoc
-- `target/reports/surefire-report/surefire-report.html` — résultats des tests
-- `target/site/jacoco/index.html` — couverture de code
 
 <br/>
 
