@@ -78,6 +78,28 @@ public class UserService {
     }
 
     /**
+     * Vérifie si un nom d'utilisateur est déjà utilisé.
+     *
+     * @param username le nom d'utilisateur à vérifier
+     * @return true si le nom est déjà pris, false sinon
+     */
+    public boolean isUsernameTaken(String username) {
+        return userRepository.existsByUsername(username);
+    }
+
+    /**
+     * Vérifie si un nom d'utilisateur est déjà utilisé par un autre
+     * utilisateur que celui en cours de modification.
+     *
+     * @param username le nom d'utilisateur à vérifier
+     * @param id       l'identifiant de l'utilisateur en cours de modification
+     * @return true si un autre utilisateur porte déjà ce nom, false sinon
+     */
+    public boolean isUsernameTakenByAnotherUser(String username, Integer id) {
+        return userRepository.existsByUsernameAndIdNot(username, id);
+    }
+
+    /**
      * Crée un utilisateur à partir des champs saisis dans le formulaire, en
      * hachant son mot de passe avec BCrypt avant l'enregistrement. La
      * robustesse du mot de passe doit être vérifiée par l'appelant via

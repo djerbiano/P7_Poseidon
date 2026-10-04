@@ -22,4 +22,22 @@ public interface UserRepository extends JpaRepository<User, Integer>, JpaSpecifi
      * @return l'utilisateur correspondant, ou null si aucun utilisateur ne porte ce nom
      */
     User findByUsername(String username);
+
+    /**
+     * Indique si un utilisateur porte déjà ce nom d'utilisateur.
+     *
+     * @param username le nom d'utilisateur à vérifier
+     * @return true si le nom est déjà utilisé, false sinon
+     */
+    boolean existsByUsername(String username);
+
+    /**
+     * Indique si un autre utilisateur que celui désigné par l'identifiant
+     * porte déjà ce nom d'utilisateur.
+     *
+     * @param username le nom d'utilisateur à vérifier
+     * @param id       l'identifiant de l'utilisateur modifié, exclu de la recherche
+     * @return true si un autre utilisateur porte déjà ce nom, false sinon
+     */
+    boolean existsByUsernameAndIdNot(String username, Integer id);
 }

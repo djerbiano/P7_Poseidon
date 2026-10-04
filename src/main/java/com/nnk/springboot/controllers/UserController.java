@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import jakarta.validation.Valid;
 
@@ -26,6 +27,8 @@ public class UserController {
 
     private static final String WEAK_PASSWORD_MESSAGE =
             "Password must contain at least 8 characters, one uppercase letter, one digit and one symbol";
+
+    private static final String USERNAME_TAKEN_MESSAGE = "This username is already taken";
 
     @Autowired
     private UserService userService;
@@ -70,6 +73,10 @@ public class UserController {
         if (result.hasErrors()) {
             return "user/add";
         }
+        if (userService.isUsernameTaken(user.getUsername())) {
+            result.rejectValue("username", "error.user", USERNAME_TAKEN_MESSAGE);
+            return "user/add";
+        }
         if (user.getPassword() == null || user.getPassword().isBlank()) {
             result.rejectValue("password", "error.user", "Password is mandatory");
             return "user/add";
@@ -78,7 +85,12 @@ public class UserController {
             result.rejectValue("password", "error.user", WEAK_PASSWORD_MESSAGE);
             return "user/add";
         }
-        userService.create(user);
+        try {
+            userService.create(user);
+        } catch (DataIntegrityViolationException e) {
+            result.rejectValue("username", "error.user", USERNAME_TAKEN_MESSAGE);
+            return "user/add";
+        }
         return "redirect:/user/list";
     }
 
@@ -116,13 +128,24 @@ public class UserController {
             user.setId(id);
             return "user/update";
         }
+        if (userService.isUsernameTakenByAnotherUser(user.getUsername(), id)) {
+            result.rejectValue("username", "error.user", USERNAME_TAKEN_MESSAGE);
+            user.setId(id);
+            return "user/update";
+        }
         if (user.getPassword() != null && !user.getPassword().isBlank()
                 && !userService.isPasswordValid(user.getPassword())) {
             result.rejectValue("password", "error.user", WEAK_PASSWORD_MESSAGE);
             user.setId(id);
             return "user/update";
         }
-        userService.update(id, user);
+        try {
+            userService.update(id, user);
+        } catch (DataIntegrityViolationException e) {
+            result.rejectValue("username", "error.user", USERNAME_TAKEN_MESSAGE);
+            user.setId(id);
+            return "user/update";
+        }
         return "redirect:/user/list";
     }
 
