@@ -10,7 +10,7 @@
 [![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=flat-square&logo=mysql&logoColor=white)](https://www.mysql.com/)
 [![JUnit5](https://img.shields.io/badge/JUnit-5-25A162?style=flat-square&logo=junit5&logoColor=white)](https://junit.org/junit5/)
 
-[![Tests](https://img.shields.io/badge/tests-128%2F128%20passing-brightgreen?style=flat-square)](#-tests--qualité)
+[![Tests](https://img.shields.io/badge/tests-135%2F135%20passing-brightgreen?style=flat-square)](#-tests--qualité)
 [![Coverage](https://img.shields.io/badge/coverage-99%25-brightgreen?style=flat-square)](#-tests--qualité)
 [![Javadoc](https://img.shields.io/badge/javadoc-0%20warning-brightgreen?style=flat-square)](https://djerbiano.github.io/P7_Poseidon/)
 
@@ -32,9 +32,9 @@ L'accent a été mis sur une architecture propre et testée : séparation strict
 |---|---|
 | 🏛️ **Architecture en couches** | Controller → Service → Repository, classes de service directes (sans interfaces) |
 | 📦 **DTO pour les formulaires** | Les formulaires sont liés à des DTO qui n'exposent que les champs saisissables : protection contre le Mass Assignment, et la mise à jour ne modifie que les champs du formulaire |
-| 🔐 **Sécurité** | Spring Security par session, mots de passe hachés avec BCrypt (facteur 14), règles de robustesse (8+ caractères, majuscule, chiffre, symbole), hash jamais renvoyé au navigateur |
-| 🛡️ **Gestion d'erreurs centralisée** | `GlobalExceptionHandler`, pages 403/404 personnalisées |
-| 🧪 **128 tests unitaires** | Couches isolées avec Mockito et MockMvc, 99% de couverture d'instructions et 100% de couverture de branches (JaCoCo) |
+| 🔐 **Sécurité** | Spring Security par session, mots de passe hachés avec BCrypt (facteur 14), règles de robustesse (8+ caractères, majuscule, chiffre, symbole), hash jamais renvoyé au navigateur, nom d'utilisateur unique |
+| 🛡️ **Gestion d'erreurs centralisée** | `GlobalExceptionHandler`, pages 400/404 personnalisées |
+| 🧪 **135 tests unitaires** | Couches isolées avec Mockito et MockMvc, 99% de couverture d'instructions et 100% de couverture de branches (JaCoCo) |
 | 📝 **JavaDoc complète** | Documentation intégrale du code, 0 warning |
 
 <br/>
@@ -48,7 +48,7 @@ L'accent a été mis sur une architecture propre et testée : séparation strict
 | **Rating** | Notations d'agences (Moody's, S&P, Fitch) |
 | **RuleName** | Règles de trading |
 | **Trade** | Transactions |
-| **User** | Comptes utilisateurs et rôles (ADMIN / USER) |
+| **User** | Comptes utilisateurs et rôles (ADMIN / USER), nom d'utilisateur unique |
 
 Chaque module expose les mêmes opérations CRUD (liste, ajout, modification, suppression) via des pages Thymeleaf, avec validation métier propre à chaque entité (ex. au moins une note d'agence requise pour un Rating).
 
@@ -91,8 +91,11 @@ Requête HTTP → Controller → Service → Repository → MySQL
 - Validation de robustesse des mots de passe : 8 caractères minimum, une majuscule, un chiffre, un symbole
 - Mot de passe haché jamais renvoyé dans les formulaires ; laissé vide à la modification, l'ancien est conservé
 - Protection contre le Mass Assignment grâce aux DTO de formulaire
+- Nom d'utilisateur unique, garanti à deux niveaux :
+    - **application** : vérification avant l'enregistrement, avec un message d'erreur sous le champ (en modification, l'utilisateur modifié est exclu de la vérification) ;
+    - **base de données** : contrainte `UNIQUE` sur la colonne `username`, qui protège aussi contre deux créations simultanées (la `DataIntegrityViolationException` est interceptée et affiche le même message)
 - Message d'erreur générique en cas d'échec de connexion, pour éviter l'énumération de comptes
-- Pages d'erreur dédiées (403 accès refusé, 404 ressource introuvable)
+- Pages d'erreur dédiées (400 identifiant invalide, 404 ressource introuvable)
 
 <br/>
 
@@ -100,9 +103,9 @@ Requête HTTP → Controller → Service → Repository → MySQL
 
 | Métrique | Résultat |
 |---|---|
-| Tests unitaires | **128 / 128** (100%) |
-| Couverture des instructions | **99%** (8 instructions non couvertes sur 1 283 : méthode `main()` et constructeur par défaut d'une classe utilitaire) |
-| Couverture des branches | **100%** (74 / 74) |
+| Tests unitaires | **135 / 135** (100%) |
+| Couverture des instructions | **99%** (8 instructions non couvertes : méthode `main()` et constructeur implicite de la classe utilitaire `PasswordValidator`) |
+| Couverture des branches | **100%** (78 / 78) |
 
 > Le package `dto` n'apparaît pas dans le rapport JaCoCo : il ne contient que du code généré par Lombok (annoté `@lombok.Generated`), que JaCoCo exclut automatiquement. La validation et le binding des DTO sont testés à travers les tests MockMvc des contrôleurs.
 
@@ -135,7 +138,7 @@ git clone https://github.com/djerbiano/P7_Poseidon.git
 cd P7_Poseidon
 ```
 
-Configure ta base MySQL et complète `application.properties` (non versionné) avec tes identifiants de connexion, puis :
+Configure ta base MySQL, copie `src/main/resources/application.example.properties` en `application.properties` (non versionné) et complète-le avec tes identifiants de connexion, puis :
 
 ```bash
 mvn spring-boot:run

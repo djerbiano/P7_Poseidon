@@ -227,4 +227,37 @@ public class UserServiceTest {
         assertThrows(ResourceNotFoundException.class, () -> userService.deleteById(99));
         verify(userRepository, never()).delete(any(User.class));
     }
+    /**
+     * Vérifie que isUsernameTaken() renvoie true quand le nom existe déjà.
+     */
+    @Test
+    void isUsernameTaken_shouldReturnTrue_whenUsernameExists() {
+        when(userRepository.existsByUsername("testuser")).thenReturn(true);
+
+        assertTrue(userService.isUsernameTaken("testuser"));
+    }
+
+    /**
+     * Vérifie que isUsernameTaken() renvoie false quand le nom est libre.
+     */
+    @Test
+    void isUsernameTaken_shouldReturnFalse_whenUsernameIsFree() {
+        when(userRepository.existsByUsername("free")).thenReturn(false);
+
+        assertFalse(userService.isUsernameTaken("free"));
+    }
+
+    /**
+     * Vérifie que isUsernameTakenByAnotherUser() renvoie true quand un autre
+     * utilisateur porte déjà ce nom.
+     */
+    @Test
+    void isUsernameTakenByAnotherUser_shouldReturnTrue_whenAnotherUserHasIt() {
+        when(userRepository.existsByUsernameAndIdNot("testuser", 2)).thenReturn(true);
+
+        assertTrue(userService.isUsernameTakenByAnotherUser("testuser", 2));
+    }
+
+
+
 }

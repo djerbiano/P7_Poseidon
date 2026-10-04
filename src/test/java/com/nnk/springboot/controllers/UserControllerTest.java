@@ -10,6 +10,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.util.List;
 
@@ -289,5 +290,90 @@ public class UserControllerTest {
                 .andExpect(redirectedUrl("/user/list"));
 
         verify(userService, times(1)).deleteById(1);
+    }
+
+    /**
+     * Vérifie qu'un nom d'utilisateur déjà pris réaffiche le formulaire
+     * d'ajout avec une erreur sur le champ username.
+     */
+    @Test
+    @WithMockUser
+    void validate_shouldReturnAddView_whenUsernameAlreadyExists() throws Exception {
+        when(userService.isUsernameTaken("admin")).thenReturn(true);
+
+        mockMvc.perform(post("/user/validate")
+                        .with(csrf())
+                        .param("username", "admin")
+                        .param("password", "Str0ng@Pass")
+                        .param("fullname", "Test User")
+                        .param("role", "USER"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("user/add"))
+                .andExpect(model().attributeHasFieldErrors("user", "username"));
+
+        verify(userService, never()).create(any(UserDto.class));
+    }
+
+    /**
+     * Vérifie que si la base refuse un doublon (contrainte UNIQUE), le
+     * formulaire d'ajout est réaffiché avec une erreur sur le champ username.
+     */
+    @Test
+    @WithMockUser
+    void validate_shouldReturnAddView_whenDatabaseRejectsDuplicate() throws Exception {
+        when(userService.isPasswordValid("Str0ng@Pass")).thenReturn(true);
+        doThrow(new DataIntegrityViolationException("duplicate"))
+                .when(userService).create(any(UserDto.class));
+
+        mockMvc.perform(post("/user/validate")
+                        .with(csrf())
+                        .param("username", "admin")
+                        .param("password", "Str0ng@Pass")
+                        .param("fullname", "Test User")
+                        .param("role", "USER"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("user/add"))
+                .andExpect(model().attributeHasFieldErrors("user", "username"));
+    }
+
+    /**
+     * Vérifie qu'un nom déjà porté par un autre utilisateur réaffiche le
+     * formulaire de modification avec une erreur sur le champ username.
+     */
+    @Test
+    @WithMockUser
+    void updateUser_shouldReturnUpdateView_whenUsernameTakenByAnotherUser() throws Exception {
+        when(userService.isUsernameTakenByAnotherUser("admin", 1)).thenReturn(true);
+
+        mockMvc.perform(post("/user/update/1")
+                        .with(csrf())
+                        .param("username", "admin")
+                        .param("fullname", "Test User")
+                        .param("role", "USER"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("user/update"))
+                .andExpect(model().attributeHasFieldErrors("user", "username"));
+
+        verify(userService, never()).update(anyInt(), any(UserDto.class));
+    }
+
+    /**
+     * Vérifie que si la base refuse un doublon lors d'une modification, le
+     * formulaire est réaffiché avec une erreur sur le champ username.
+     */
+    @Test
+    @WithMockUser
+    void updateUser_shouldReturnUpdateView_whenDatabaseRejectsDuplicate() throws Exception {
+        doThrow(new DataIntegrityViolationException("duplicate"))
+                .when(userService).update(eq(1), any(UserDto.class));
+
+        mockMvc.perform(post("/user/update/1")
+                        .with(csrf())
+                        .param("username", "admin")
+                        .param("fullname", "Test User")
+                        .param("role", "USER"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("user/update"))
+                .andExpect(model().attributeHasFieldErrors("user", "username"));
     }
 }
